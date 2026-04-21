@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>瑜伽普拉提 AI 工具矩阵</title>
+<style>
+:root {
+  --sage: #5A8A5E;
+  --sage-dark: #3d6b42;
+  --sage-light: #8BB88F;
+  --sage-pale: #EEF4EE;
+  --sage-border: #d4e8d5;
+  --tool1: #5A8A5E; --tool1-pale: #EEF4EE;
+  --tool2: #7c3aed; --tool2-pale: #f5f3ff;
+  --tool3: #f59e0b; --tool3-pale: #fffbeb;
+  --bg: #F8F5F0;
+  --bg-card: #FFFFFF;
+  --border: #E5DED5;
+  --subtle: #F2EDE6;
+  --text: #2D2926;
+  --text-2: #57534e;
+  --muted: #7C7670;
+  --light: #A8A29C;
+  --green: #16a34a; --green-pale: #dcfce7;
+  --red: #dc2626;   --red-pale: #fee2e2;
+  --amber: #d97706; --amber-pale: #fef3c7;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,.1);
+  --shadow-xl: 0 20px 48px rgba(0,0,0,.14);
+  --r: 12px; --r-lg: 20px; --r-xl: 24px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+/* ── Header ── */
+#header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.header-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.header-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;color:var(--sage);white-space:nowrap;flex-shrink:0;cursor:pointer}
+.logo-icon{width:34px;height:34px;background:var(--sage-pale);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.header-nav{display:flex;align-items:center;gap:4px;flex:1;justify-content:center}
+.nav-link{padding:6px 14px;border-radius:8px;font-size:14px;color:var(--muted);transition:color .15s,background .15s;cursor:pointer;white-space:nowrap}
+.nav-link:hover{color:var(--text);background:var(--subtle)}
+.header-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 20px;border-radius:99px;font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;transition:all .2s;border:none;white-space:nowrap}
+.btn-primary{background:var(--sage);color:#fff}
+.btn-primary:hover{background:var(--sage-dark);box-shadow:0 2px 8px rgba(90,138,94,.35)}
+.btn-outline{background:none;border:1.5px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--sage);color:var(--sage)}
+.btn-ghost{background:none;color:var(--muted);padding:8px 16px}
+.btn-ghost:hover{background:var(--subtle);color:var(--text)}
+.btn-sm{padding:6px 14px;font-size:13px}
+.btn-lg{padding:13px 28px;font-size:15px;font-weight:600}
+.btn-full{width:100%}
+.btn-tool1{background:var(--tool1);color:#fff}.btn-tool1:hover{background:#3d6b42}
+.btn-tool2{background:var(--tool2);color:#fff}.btn-tool2:hover{background:#6d28d9}
+.btn-tool3{background:var(--tool3);color:#fff}.btn-tool3:hover{background:#c77d08}
+
+/* ── User button ── */
+.user-btn{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:99px;border:1px solid var(--border);background:none;cursor:pointer;transition:border-color .15s,box-shadow .15s;font-family:inherit;font-size:13px;color:var(--text)}
+.user-btn:hover{border-color:var(--sage);box-shadow:0 0 0 3px var(--sage-pale)}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--sage);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ── Hero ── */
+#hero{background:linear-gradient(150deg,var(--sage-pale) 0%,#f3ede6 60%,var(--bg) 100%);padding:80px 24px 72px;text-align:center;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;pointer-events:none;opacity:.5}
+.hero-inner{max-width:720px;margin:0 auto;position:relative}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:99px;background:var(--sage-pale);border:1px solid var(--sage-border);font-size:13px;color:var(--sage);font-weight:500;margin-bottom:20px}
+.hero-title{font-size:clamp(28px,5vw,46px);font-weight:800;line-height:1.2;letter-spacing:-.5px;margin-bottom:16px}
+.hero-title span{color:var(--sage)}
+.hero-sub{font-size:17px;color:var(--muted);line-height:1.7;margin-bottom:32px;max-width:560px;margin-left:auto;margin-right:auto}
+.hero-actions{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.hero-proof{margin-top:36px;display:flex;align-items:center;justify-content:center;gap:16px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.proof-dot{width:4px;height:4px;border-radius:50%;background:var(--border)}
+
+/* ── Sections ── */
+.section{padding:72px 24px}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-header{text-align:center;margin-bottom:48px}
+.section-label{display:inline-block;font-size:12px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--sage);margin-bottom:10px}
+.section-title{font-size:clamp(22px,3.5vw,30px);font-weight:700;letter-spacing:-.3px;margin-bottom:12px}
+.section-desc{font-size:15px;color:var(--muted);max-width:520px;margin:0 auto}
+
+/* ── Tool Cards ── */
+#tools{background:var(--bg)}
+.tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.tool-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:transform .25s,box-shadow .25s;display:flex;flex-direction:column}
+.tool-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
+.tool-card-top{height:4px;flex-shrink:0}
+.tool-card-body{padding:24px;flex:1;display:flex;flex-direction:column}
+.tool-card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.tool-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
+.s-locked{background:#f3f4f6;color:var(--muted)}
+.s-trial{background:var(--amber-pale);color:var(--amber)}
+.s-active{background:var(--green-pale);color:var(--green)}
+.tool-name{font-size:17px;font-weight:700;letter-spacing:-.2px;margin-bottom:8px}
+.tool-desc{font-size:13.5px;color:var(--muted);line-height:1.65;margin-bottom:16px;flex:1}
+.tool-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+.tag{padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:500}
+.tool-card-foot{padding:0 24px 24px}
+
+/* ── Pricing ── */
+#pricing{background:var(--subtle)}
+.billing-wrap{display:flex;justify-content:center;margin-bottom:48px}
+.billing-toggle{display:inline-flex;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:99px;padding:3px}
+.billing-btn{padding:7px 18px;border-radius:99px;font-size:13px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--muted);font-family:inherit;transition:all .2s;position:relative}
+.billing-btn.active{background:var(--sage);color:#fff}
+.annual-tag{position:absolute;top:-8px;right:-4px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 5px;border-radius:99px}
+.pricing-grid{display:grid;grid-template-columns:1fr 1.06fr 1fr;gap:16px;align-items:start}
+.price-card{background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:28px 24px;position:relative;transition:box-shadow .2s}
+.price-card:hover{box-shadow:var(--shadow-md)}
+.price-card.featured{border-color:var(--sage);background:linear-gradient(160deg,var(--sage-pale) 0%,#fff 55%);box-shadow:0 0 0 1px var(--sage),var(--shadow-md)}
+.price-pop{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--sage);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:99px;white-space:nowrap}
+.price-plan{font-size:14px;font-weight:600;color:var(--muted);text-align:center;margin-bottom:4px}
+.price-amount{text-align:center;margin:14px 0 4px}
+.price-num{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1}
+.price-unit{font-size:14px;color:var(--muted)}
+.price-original{text-align:center;font-size:13px;color:var(--light);text-decoration:line-through;min-height:20px;margin-bottom:2px}
+.price-saving{text-align:center;font-size:12px;font-weight:600;color:#ef4444;min-height:18px;margin-bottom:16px}
+.price-divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.tool-sel-label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.tool-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:4px;cursor:pointer;transition:background .15s;font-size:13.5px}
+.tool-opt:hover{background:var(--subtle)}
+.tool-opt input{width:15px;height:15px;cursor:pointer;accent-color:var(--sage)}
+.bundle-list{margin-bottom:16px}
+.bundle-item{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13.5px;color:var(--text-2);border-bottom:1px solid var(--sage-border)}
+.bundle-item:last-child{border-bottom:none}
+.bcheck{color:var(--sage);font-weight:700}
+
+/* ── Footer ── */
+#footer{background:var(--text);color:rgba(255,255,255,.5);padding:32px 24px;text-align:center;font-size:13px}
+.footer-inner{max-width:1100px;margin:0 auto}
+.footer-brand{font-weight:700;color:rgba(255,255,255,.8);margin-bottom:8px;font-size:15px}
+
+/* ── Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--bg-card);border-radius:var(--r-xl);box-shadow:var(--shadow-xl);width:100%;max-width:420px;animation:mIn .25s ease;overflow:hidden}
+@keyframes mIn{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:none}}
+.modal-head{padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:17px;font-weight:700}
+.modal-close{width:32px;height:32px;border:none;background:var(--subtle);border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:background .15s}
+.modal-close:hover{background:var(--border)}
+.modal-body{padding:20px 24px 24px}
+
+/* ── Auth form ── */
+.auth-tabs{display:flex;background:var(--subtle);border-radius:10px;padding:3px;margin-bottom:20px}
+.auth-tab{flex:1;padding:7px;border:none;background:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--muted);transition:all .2s}
+.auth-tab.active{background:var(--bg-card);color:var(--text);box-shadow:var(--shadow-sm)}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:6px}
+.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r);font-size:14px;font-family:inherit;color:var(--text);background:var(--bg-card);outline:none;transition:border-color .15s,box-shadow .15s}
+.form-input:focus{border-color:var(--sage);box-shadow:0 0 0 3px rgba(90,138,94,.12)}
+.form-err{font-size:12px;color:var(--red);margin-top:8px;min-height:16px}
+
+/* ── Drawer ── */
+#drawer-bg{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.3);backdrop-filter:blur(4px)}
+#drawer-bg.open{display:block}
+#drawer{position:fixed;top:0;right:-380px;width:360px;max-width:calc(100vw - 40px);height:100vh;background:var(--bg-card);z-index:201;box-shadow:-4px 0 32px rgba(0,0,0,.12);transition:right .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+#drawer.open{right:0}
+.drawer-head{padding:20px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.drawer-title{font-size:16px;font-weight:700}
+.drawer-body{flex:1;overflow-y:auto;padding:20px}
+.drawer-foot{padding:16px 20px;border-top:1px solid var(--border)}
+.profile-row{display:flex;align-items:center;gap:14px;padding:16px;background:var(--subtle);border-radius:var(--r);margin-bottom:20px}
+.profile-av{width:48px;height:48px;border-radius:50%;background:var(--sage);color:#fff;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.profile-name{font-size:15px;font-weight:600;margin-bottom:2px}
+.profile-email{font-size:12px;color:var(--muted)}
+.d-sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--light);margin-bottom:10px}
+.sub-box{border-radius:var(--r);padding:14px;margin-bottom:16px;border:1px solid}
+.access-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.access-item:last-child{border-bottom:none}
+.access-chip{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:99px}
+
+/* ── Plan features list ── */
+.plan-features{margin-bottom:20px}
+.plan-feat-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13.5px;color:var(--text-2);border-bottom:1px solid var(--subtle)}
+.plan-feat-row:last-child{border-bottom:none}
+.feat-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.feat-icon.ok{background:var(--green-pale);color:var(--green)}
+.feat-icon.no{background:var(--subtle);color:var(--light)}
+.feat-icon.soon{background:var(--amber-pale);color:var(--amber)}
+.price-desc{text-align:center;font-size:13px;color:var(--muted);margin-bottom:4px;min-height:18px}
+
+/* ── Confirm modal ── */
+.confirm-box{background:var(--sage-pale);border:1px solid var(--sage-border);border-radius:var(--r);padding:16px;margin-bottom:16px;text-align:center}
+.confirm-plan{font-size:14px;color:var(--muted);margin-bottom:4px}
+.confirm-price{font-size:28px;font-weight:800}
+.confirm-tools{font-size:13px;color:var(--muted);margin-top:8px}
+
+/* ── Toast ── */
+#toasts{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:var(--r);box-shadow:var(--shadow-lg);font-size:14px;font-weight:500;animation:tIn .3s ease;pointer-events:all;max-width:320px;background:#fff}
+@keyframes tIn{from{opacity:0;transform:translateY(8px) scale(.95)}to{opacity:1;transform:none}}
+.toast-success{border-left:3px solid var(--green)}
+.toast-error{border-left:3px solid var(--red)}
+.toast-info{border-left:3px solid var(--sage)}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  .tools-grid{grid-template-columns:1fr;max-width:480px;margin:0 auto}
+  .pricing-grid{grid-template-columns:1fr;max-width:400px;margin:0 auto}
+  .header-nav{display:none}
+}
+@media(max-width:600px){
+  .hero-actions{flex-direction:column;align-items:center}
+  .hero-proof{flex-direction:column;gap:8px}
+  .proof-dot{display:none}
+  .section{padding:48px 16px}
+  #hero{padding:56px 16px 48px}
+  .header-inner{padding:0 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="header">
+  <div class="header-inner">
+    <div class="header-logo" onclick="smoothScroll('#hero')">
+      <div class="logo-icon">🧘</div>
+      瑜伽 AI 矩阵
+    </div>
+    <nav class="header-nav">
+      <span class="nav-link" onclick="smoothScroll('#tools')">产品功能</span>
+      <span class="nav-link" onclick="smoothScroll('#pricing')">订阅方案</span>
+    </nav>
+    <div class="header-actions" id="header-actions"></div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section id="hero">
+  <svg class="hero-bg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice" fill="none">
+    <circle cx="80" cy="80" r="220" fill="rgba(90,138,94,.07)"/>
+    <circle cx="1120" cy="320" r="260" fill="rgba(201,116,88,.05)"/>
+    <circle cx="600" cy="380" r="180" fill="rgba(90,138,94,.04)"/>
+  </svg>
+  <div class="hero-inner">
+    <div class="hero-badge">🌿 AI 驱动的瑜伽教师工具套件</div>
+    <h1 class="hero-title">瑜伽普拉提老师的<br><span>AI 工具矩阵</span></h1>
+    <p class="hero-sub">三大 AI 工具，覆盖行业分析 · 知识管理 · 课程总结全场景<br>让每一位瑜伽普拉提教师都能用上专属 AI 助手</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary btn-lg" onclick="handleHeroCTA()">开始免费试用 7天 →</button>
+      <button class="btn btn-outline btn-lg" onclick="smoothScroll('#tools')">查看工具</button>
+    </div>
+    <div class="hero-proof">
+      <span>✓ 无需信用卡</span>
+      <span class="proof-dot"></span>
+      <span>✓ 7天全功能试用</span>
+      <span class="proof-dot"></span>
+      <span>✓ 随时取消订阅</span>
+    </div>
+  </div>
+</section>
+
+<!-- TOOLS -->
+<section id="tools" class="section">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-label">三大核心工具</div>
+      <h2 class="section-title">专为瑜伽普拉提教师打造</h2>
+      <p class="section-desc">从行业研究到课程管理，全面覆盖你的日常教学需求</p>
+    </div>
+    <div class="tools-grid" id="tools-grid"></div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="section">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-label">订阅方案</div>
+      <h2 class="section-title">选择适合你的方案</h2>
+      <p class="section-desc">行业分析师永久免费 · 课后总结免费版每月 20 次 · 专业版解锁全部功能</p>
+    </div>
+    <div class="pricing-grid">
+
+      <!-- 免费版 -->
+      <div class="price-card">
+        <div class="price-plan">免费版</div>
+        <div class="price-amount"><span class="price-num">¥0</span><span class="price-unit">/永久</span></div>
+        <div class="price-desc">基础功能，无需注册</div>
+        <hr class="price-divider">
+        <div class="plan-features">
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 🔍 行业分析师 不限次</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> ✍️ 课后总结 20次/月</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 学员管理 最多 5 人</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 语气风格 2 种</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 🧘 知识库（有限制）</div>
+        </div>
+        <button class="btn btn-outline btn-full" onclick="window.open(TOOLS[0].url,'_blank')">免费体验分析师 →</button>
+      </div>
+
+      <!-- 专业版月付（featured） -->
+      <div class="price-card featured">
+        <div class="price-pop">⭐ 最受欢迎</div>
+        <div class="price-plan">专业版</div>
+        <div class="price-amount"><span class="price-num">¥29</span><span class="price-unit">/月</span></div>
+        <div class="price-desc">7天全功能免费试用</div>
+        <hr class="price-divider">
+        <div class="plan-features">
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 🔍 行业分析师 不限次</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> ✍️ 课后总结 不限次</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 学员管理 无上限</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 语气风格 4 种</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 🧘 知识库（无限制）</div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="handleSubscribe('monthly')">开始 7天免费试用</button>
+      </div>
+
+      <!-- 专业版年付 -->
+      <div class="price-card">
+        <div class="price-plan">专业版·年付</div>
+        <div class="price-amount"><span class="price-num">¥199</span><span class="price-unit">/年</span></div>
+        <div class="price-desc">月均仅 ¥16.6，省 ¥149</div>
+        <hr class="price-divider">
+        <div class="plan-features">
+          <div class="plan-feat-row" style="font-size:13px;color:var(--muted)">包含专业版全部功能</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 课后总结 不限次</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 学员管理 无上限</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 全部 4 种语气</div>
+          <div class="plan-feat-row"><span class="feat-icon ok">✓</span> 完整历史记录</div>
+        </div>
+        <button class="btn btn-outline btn-full" onclick="handleSubscribe('annual')">年付立省 ¥149</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">🧘 瑜伽 AI 矩阵</div>
+    <p>© 2025 瑜伽普拉提 AI 工具矩阵 &nbsp;·&nbsp; 作品集展示用途</p>
+  </div>
+</footer>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <span class="modal-title" id="auth-title">欢迎回来</span>
+      <button class="modal-close" onclick="closeModal('auth-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">登录</button>
+        <button class="auth-tab" id="tab-reg" onclick="switchTab('register')">注册</button>
+      </div>
+      <div id="login-form">
+        <div class="form-group"><label class="form-label">邮箱</label><input type="email" class="form-input" id="li-email" placeholder="your@email.com"></div>
+        <div class="form-group"><label class="form-label">密码</label><input type="password" class="form-input" id="li-pw" placeholder="输入密码" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="form-err" id="li-err"></div>
+        <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="doLogin()">登录</button>
+      </div>
+      <div id="reg-form" style="display:none">
+        <div class="form-group"><label class="form-label">姓名</label><input type="text" class="form-input" id="rg-name" placeholder="你的名字"></div>
+        <div class="form-group"><label class="form-label">邮箱</label><input type="email" class="form-input" id="rg-email" placeholder="your@email.com"></div>
+        <div class="form-group"><label class="form-label">密码</label><input type="password" class="form-input" id="rg-pw" placeholder="设置密码（至少6位）" onkeydown="if(event.key==='Enter')doRegister()"></div>
+        <div class="form-err" id="rg-err"></div>
+        <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="doRegister()">注册并开始 7天免费试用</button>
+        <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px">注册即视为同意服务条款</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUBSCRIBE CONFIRM MODAL -->
+<div class="modal-overlay" id="sub-modal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <span class="modal-title">确认订阅</span>
+      <button class="modal-close" onclick="closeModal('sub-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="confirm-box">
+        <div class="confirm-plan" id="cf-plan"></div>
+        <div class="confirm-price" id="cf-price"></div>
+        <div class="confirm-tools" id="cf-tools"></div>
+      </div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px">这是演示原型，不会产生实际扣费。确认后模拟订阅成功，状态保存在本地浏览器中。</p>
+      <button class="btn btn-primary btn-full" onclick="confirmSub()">确认订阅（模拟）</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPGRADE MODAL -->
+<div class="modal-overlay" id="up-modal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <span class="modal-title">需要订阅</span>
+      <button class="modal-close" onclick="closeModal('up-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:36px;text-align:center;margin-bottom:12px">🔒</div>
+      <p id="up-text" style="text-align:center;font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:20px"></p>
+      <button class="btn btn-primary btn-full" onclick="closeModal('up-modal');smoothScroll('#pricing')">查看订阅方案</button>
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div id="drawer-bg" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="drawer-head">
+    <span class="drawer-title">我的账号</span>
+    <button class="modal-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost btn-full" style="color:var(--red)" onclick="doLogout()">退出登录</button>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div id="toasts"></div>
+
+<script>
+const TOOLS = [
+  {
+    id:'tool1', icon:'🔍',
+    name:'行业搜索引擎 + AI 分析师',
+    desc:'输入行业问题，AI 给出选择判断、对比评估与行动建议——证书怎么选、零基础能入行吗、如何让学员续费，每个决策都有依据。',
+    tags:['智能检索','AI 辅助决策','行业情报'],
+    color:'#5A8A5E', pale:'#EEF4EE',
+    url:'../瑜伽普拉提老师行业搜索引擎+AI分析师/AI分析师原型.html'
+  },
+  {
+    id:'tool2', icon:'🧘',
+    name:'老师知识库',
+    desc:'上传课程笔记和资料，构建专属知识库，AI 随问随答，让积累多年的教学经验真正为你所用。',
+    tags:['知识管理','AI 问答','笔记检索'],
+    color:'#7c3aed', pale:'#f5f3ff',
+    url:'../瑜伽普拉提老师知识库/预览.html'
+  },
+  {
+    id:'tool3', icon:'✍️',
+    name:'课后总结生成器',
+    desc:'输入课程信息，AI 自动生成专业的课后总结与学员反馈报告，节省每节课后的文字整理时间。',
+    tags:['AI 生成','课程记录','学员反馈'],
+    color:'#f59e0b', pale:'#fffbeb',
+    url:'../瑜伽普拉提老师课后总结/课后总结生成器.html'
+  }
+];
+
+const PRICES = { monthly: 29, annual: 199 };
+
+let pending = null;
+
+/* ── Storage ── */
+const SK = 'yoga_session', UK = 'yoga_users';
+const getUser = () => { try{ return JSON.parse(localStorage.getItem(SK)) }catch{ return null } };
+const getUsers = () => { try{ return JSON.parse(localStorage.getItem(UK)||'[]') }catch{ return [] } };
+function saveUser(u) {
+  localStorage.setItem(SK, JSON.stringify(u));
+  const users = getUsers();
+  const i = users.findIndex(x => x.email === u.email);
+  i >= 0 ? users[i] = u : users.push(u);
+  localStorage.setItem(UK, JSON.stringify(users));
+}
+function clearSession() { localStorage.removeItem(SK); }
+
+/* ── Access ── */
+// tool1: 行业分析师 — 永久免费，无需登录
+// tool2: 知识库     — 免费版可进入，限制在工具内执行
+// tool3: 课后总结   — 免费版可进入，限制在工具内执行
+function hasAccess(toolId) {
+  return true; // 三个工具均可进入，限制由各工具内部执行
+}
+function onTrial() {
+  const u = getUser();
+  return u && u.trialEnds && new Date() <= new Date(u.trialEnds);
+}
+function isPro() {
+  const u = getUser();
+  return u && (u.plan === 'pro' || onTrial());
+}
+
+
+/* ── Render ── */
+function renderHeader() {
+  const u = getUser();
+  document.getElementById('header-actions').innerHTML = u
+    ? `<button class="user-btn" onclick="openDrawer()">
+         <div class="avatar">${u.name.charAt(0)}</div>
+         <span>${u.name}</span>
+         <span style="color:var(--light);font-size:11px">▾</span>
+       </button>`
+    : `<button class="btn btn-ghost btn-sm" onclick="openAuth('login')">登录</button>
+       <button class="btn btn-primary btn-sm" onclick="openAuth('register')">免费试用 7天</button>`;
+}
+
+function renderTools() {
+  document.getElementById('tools-grid').innerHTML = TOOLS.map(t => {
+    // 徽章逻辑
+    let badge, btnCls, btnTxt;
+    if (t.id === 'tool1') {
+      badge = `<span class="status-badge s-active">✓ 永久免费</span>`;
+      btnCls = 'btn-tool1';
+      btnTxt = '进入工具 →';
+    } else if (t.id === 'tool2') {
+      if (isPro()) {
+        badge = onTrial()
+          ? `<span class="status-badge s-trial">✦ 试用中</span>`
+          : `<span class="status-badge s-active">✓ 专业版</span>`;
+        btnCls = 'btn-tool2';
+        btnTxt = '进入工具 →';
+      } else {
+        badge = `<span class="status-badge" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0">免费版</span>`;
+        btnCls = 'btn-tool2';
+        btnTxt = '免费使用（有限制）→';
+      }
+    } else {
+      // tool3 课后总结
+      if (isPro()) {
+        badge = onTrial()
+          ? `<span class="status-badge s-trial">✦ 试用中</span>`
+          : `<span class="status-badge s-active">✓ 专业版</span>`;
+        btnCls = 'btn-tool3';
+        btnTxt = '进入工具 →';
+      } else {
+        badge = `<span class="status-badge" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0">免费版</span>`;
+        btnCls = 'btn-tool3';
+        btnTxt = '免费使用（有限制）→';
+      }
+    }
+    const tags = t.tags.map(tag =>
+      `<span class="tag" style="background:${t.pale};color:${t.color}">${tag}</span>`
+    ).join('');
+    return `
+      <div class="tool-card">
+        <div class="tool-card-top" style="background:${t.color}"></div>
+        <div class="tool-card-body">
+          <div class="tool-card-head">
+            <div class="tool-icon" style="background:${t.pale}">${t.icon}</div>
+            ${badge}
+          </div>
+          <div class="tool-name">${t.name}</div>
+          <div class="tool-desc">${t.desc}</div>
+          <div class="tool-tags">${tags}</div>
+        </div>
+        <div class="tool-card-foot">
+          <button class="btn ${btnCls} btn-full" onclick="openTool('${t.id}')">${btnTxt}</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderDrawer() {
+  const u = getUser();
+  if (!u) return;
+  const trial = onTrial();
+  let subHtml;
+  if (trial) {
+    const daysLeft = Math.max(0, Math.ceil((new Date(u.trialEnds) - new Date()) / 86400000));
+    subHtml = `<div class="sub-box" style="background:var(--amber-pale);border-color:#fde68a">
+      <div style="font-size:14px;font-weight:600;color:var(--amber);margin-bottom:4px">✦ 7天专业版试用中</div>
+      <div style="font-size:12px;color:var(--muted)">剩余 ${daysLeft} 天 · 到期后自动切换免费版</div>
+    </div>`;
+  } else if (u.plan === 'pro') {
+    subHtml = `<div class="sub-box" style="background:var(--sage-pale);border-color:var(--sage-border)">
+      <div style="font-size:14px;font-weight:600;color:var(--sage);margin-bottom:4px">✓ 专业版</div>
+      <div style="font-size:12px;color:var(--muted)">${u.billing==='annual'?'年付 ¥199/年':'月付 ¥29/月'} · 订阅于 ${u.since||'—'}</div>
+    </div>`;
+  } else {
+    subHtml = `<div class="sub-box" style="background:#f9fafb;border-color:var(--border)">
+      <div style="font-size:14px;font-weight:600;color:var(--muted);margin-bottom:4px">免费版</div>
+      <div style="font-size:12px;color:var(--muted)">课后总结 20次/月 · 学员最多 5 人</div>
+    </div>`;
+  }
+  const toolList = TOOLS.map(t => {
+    let chipStyle, chipTxt;
+    if (t.id === 'tool1') {
+      chipStyle = 'background:var(--green-pale);color:var(--green)';
+      chipTxt = '✓ 永久免费';
+    } else {
+      const pro = isPro();
+      chipStyle = pro ? 'background:var(--green-pale);color:var(--green)' : 'background:#f3f4f6;color:var(--muted)';
+      chipTxt = pro ? '✓ 专业版' : '免费版（有限制）';
+    }
+    return `<div class="access-item">
+      <span>${t.icon} ${t.name}</span>
+      <span class="access-chip" style="${chipStyle}">${chipTxt}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('drawer-body').innerHTML = `
+    <div class="profile-row">
+      <div class="profile-av">${u.name.charAt(0)}</div>
+      <div><div class="profile-name">${u.name}</div><div class="profile-email">${u.email}</div></div>
+    </div>
+    <div class="d-sec-title">订阅状态</div>
+    ${subHtml}
+    <div class="d-sec-title">工具权限</div>
+    <div>${toolList}</div>
+    ${!isPro() ? `<div style="margin-top:16px"><button class="btn btn-primary btn-full" onclick="closeDrawer();smoothScroll('#pricing')">升级到专业版 ¥29/月</button></div>` : ''}
+  `;
+}
+
+function updateUI() { renderHeader(); renderTools(); }
+
+/* ── Auth ── */
+function openAuth(tab) { switchTab(tab); openModal('auth-modal'); }
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('tab-login').classList.toggle('active', isLogin);
+  document.getElementById('tab-reg').classList.toggle('active', !isLogin);
+  document.getElementById('login-form').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('reg-form').style.display = isLogin ? 'none' : 'block';
+  document.getElementById('auth-title').textContent = isLogin ? '欢迎回来' : '创建账号';
+  document.getElementById('li-err').textContent = '';
+  document.getElementById('rg-err').textContent = '';
+}
+
+function doLogin() {
+  const email = document.getElementById('li-email').value.trim();
+  const pw = document.getElementById('li-pw').value;
+  const err = document.getElementById('li-err');
+  if (!email || !pw) { err.textContent = '请填写邮箱和密码'; return; }
+  const u = getUsers().find(x => x.email === email && x.password === pw);
+  if (!u) { err.textContent = '邮箱或密码错误'; return; }
+  saveUser(u);
+  closeModal('auth-modal');
+  updateUI();
+  showToast('登录成功，欢迎回来！', 'success');
+}
+
+function doRegister() {
+  const name = document.getElementById('rg-name').value.trim();
+  const email = document.getElementById('rg-email').value.trim();
+  const pw = document.getElementById('rg-pw').value;
+  const err = document.getElementById('rg-err');
+  if (!name) { err.textContent = '请填写姓名'; return; }
+  if (!email || !email.includes('@')) { err.textContent = '请填写有效邮箱'; return; }
+  if (pw.length < 6) { err.textContent = '密码至少 6 位'; return; }
+  if (getUsers().find(x => x.email === email)) { err.textContent = '该邮箱已注册，请直接登录'; return; }
+  const trialEnd = new Date(); trialEnd.setDate(trialEnd.getDate() + 7);
+  const u = { name, email, password: pw, plan: null, billing: null, since: null,
+               trialEnds: trialEnd.toISOString().split('T')[0] };
+  saveUser(u);
+  closeModal('auth-modal');
+  updateUI();
+  showToast(`欢迎 ${name}！7天专业版试用已开启 🎉`, 'success');
+}
+
+function doLogout() {
+  clearSession();
+  closeDrawer();
+  updateUI();
+  showToast('已退出登录', 'info');
+}
+
+/* ── Subscribe ── */
+function handleSubscribe(billing) {
+  const u = getUser();
+  if (!u) { openAuth('register'); showToast('注册后即可开始 7天免费试用', 'info'); return; }
+  const isAnnual = billing === 'annual';
+  const price = isAnnual ? PRICES.annual : PRICES.monthly;
+  const priceLabel = isAnnual ? '¥199 / 年（月均 ¥16.6）' : '¥29 / 月';
+  pending = { billing, price };
+  document.getElementById('cf-plan').textContent = isAnnual ? '专业版·年付' : '专业版·月付';
+  document.getElementById('cf-price').textContent = priceLabel;
+  document.getElementById('cf-tools').textContent = '行业分析师 + 知识库 + 课后总结（全部无限制）';
+  openModal('sub-modal');
+}
+
+function confirmSub() {
+  const u = getUser();
+  if (!u || !pending) return;
+  u.plan = 'pro';
+  u.billing = pending.billing;
+  u.since = new Date().toISOString().split('T')[0];
+  saveUser(u);
+  closeModal('sub-modal');
+  pending = null;
+  updateUI();
+  showToast('订阅成功！专业版功能已全部解锁 ✓', 'success');
+}
+
+function openTool(toolId) {
+  const t = TOOLS.find(x => x.id === toolId);
+  if (!t) return;
+  window.open(t.url, '_blank');
+}
+
+/* ── Modal / Drawer ── */
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el =>
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); })
+);
+function openDrawer() {
+  renderDrawer();
+  document.getElementById('drawer-bg').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+  document.getElementById('drawer-bg').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* ── Toast ── */
+function showToast(msg, type='info') {
+  const c = document.getElementById('toasts');
+  const icons = {success:'✓', error:'✕', info:'ℹ'};
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `<span style="font-size:16px">${icons[type]}</span><span>${msg}</span>`;
+  c.appendChild(el);
+  setTimeout(() => {
+    el.style.cssText += 'opacity:0;transform:translateY(8px);transition:all .3s';
+    setTimeout(() => el.remove(), 300);
+  }, 3200);
+}
+
+/* ── Misc ── */
+function handleHeroCTA() {
+  getUser() ? smoothScroll('#tools') : openAuth('register');
+}
+function smoothScroll(sel) {
+  const el = document.querySelector(sel);
+  if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+/* ── Init ── */
+updateUI();
+</script>
+</body>
+</html>
