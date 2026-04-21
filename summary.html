@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>课后总结生成器</title>
+  <style>
+    :root {
+      --brand: #f59e0b;
+      --brand-dark: #d97706;
+      --brand-light: #fef3c7;
+      --brand-ring: rgba(245,158,11,0.15);
+      --bg: #faf9f7;
+      --bg-card: #ffffff;
+      --text: #1c1917;
+      --text-2: #57534e;
+      --text-3: #a8a29e;
+      --border: #e7e5e4;
+      --red: #ef4444;
+      --green: #22c55e;
+      --r: 12px;
+      --r-lg: 20px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+        "Microsoft YaHei", "Helvetica Neue", sans-serif;
+      background: #ddd9d2;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      -webkit-font-smoothing: antialiased;
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    /* ── Phone wrapper ── */
+    #app {
+      width: 100%;
+      max-width: 390px;
+      min-height: 100dvh;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    @media (min-width: 500px) {
+      body { padding: 32px 16px; align-items: flex-start; }
+      #app {
+        min-height: auto;
+        height: calc(100dvh - 64px);
+        max-height: 820px;
+        border-radius: 48px;
+        box-shadow:
+          0 0 0 9px #111,
+          0 0 0 12px #2a2a2a,
+          0 32px 64px rgba(0,0,0,0.45);
+        overflow: hidden;
+      }
+    }
+
+    /* ── Header ── */
+    #app-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px 12px;
+      flex-shrink: 0;
+    }
+    .hd-title { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+    .hd-sub { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+
+    /* ── Main scroll ── */
+    #main-scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px 14px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--r-lg);
+      padding: 14px;
+      border: 1px solid var(--border);
+    }
+    .card-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Student chip ── */
+    #student-chip {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s, background 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #student-chip:active { background: #f5f3f0; }
+    #student-chip.has-student { border-color: var(--brand); background: var(--brand-light); }
+
+    .avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+      color: white; flex-shrink: 0;
+      background: var(--text-3);
+    }
+    .chip-main { font-size: 14px; font-weight: 600; color: var(--text); }
+    .chip-sub { font-size: 11px; color: var(--text-3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+    .chip-arrow { margin-left: auto; color: var(--text-3); font-size: 11px; flex-shrink: 0; }
+
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .tag {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 3px 8px; border-radius: 20px;
+      font-size: 11px; border: 1px solid;
+    }
+    .tag.goal { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+    .tag.pain { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+    .tag-k { font-weight: 700; }
+
+    /* ── Textarea ── */
+    textarea, input[type=text] {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: 11px 13px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+    }
+    textarea { resize: none; line-height: 1.65; }
+    textarea:focus, input[type=text]:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--brand-ring);
+    }
+    textarea.rec {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+      background: #fff8f8;
+    }
+    textarea::placeholder, input::placeholder { color: var(--text-3); }
+
+    /* ── Voice controls ── */
+    .voice-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+
+    .btn-voice {
+      display: flex; align-items: center; gap: 6px;
+      padding: 9px 15px;
+      border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-voice:active { transform: scale(0.96); opacity: 0.85; }
+    .btn-voice.start { background: var(--brand); color: white; }
+    .btn-voice.stop  { background: var(--red);   color: white; }
+
+    .btn-text {
+      display: flex; align-items: center; gap: 5px;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      font-size: 13px; font-weight: 500;
+      color: var(--text-2);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-text.on { border-color: var(--brand); color: #92400e; background: var(--brand-light); }
+    .btn-text:active { background: #f0eeeb; }
+
+    .btn-clr {
+      margin-left: auto;
+      font-size: 12px; color: var(--text-3);
+      background: none; border: none; cursor: pointer; padding: 6px 2px;
+    }
+    .btn-clr:active { color: var(--red); }
+
+    .rec-badge {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12px; color: var(--red); font-weight: 600;
+      margin-top: 6px;
+    }
+    .rec-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%; background: var(--red);
+      animation: blink 1s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+    /* ── Tone grid ── */
+    .tone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tone-btn {
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      background: var(--bg);
+      cursor: pointer; text-align: left;
+      transition: all 0.12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tone-btn.on { border-color: var(--brand); background: var(--brand-light); }
+    .tone-btn:active { transform: scale(0.97); }
+    .tone-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .tone-btn.on .tone-name { color: #92400e; }
+    .tone-desc { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+    /* ── Generate button ── */
+    #btn-gen {
+      width: 100%; padding: 16px;
+      background: var(--brand); border: none;
+      border-radius: var(--r-lg);
+      font-size: 16px; font-weight: 800;
+      color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 6px 20px rgba(245,158,11,0.38);
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      letter-spacing: -0.2px;
+    }
+    #btn-gen:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(245,158,11,0.25); }
+    #btn-gen:disabled { background: #ccc9c4; box-shadow: none; cursor: not-allowed; transform: none; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Output ── */
+    .out-section {
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+    .out-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .out-hd:active { background: #f8f7f5; }
+    .out-key {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-3);
+    }
+    .out-actions { display: flex; gap: 4px; align-items: center; }
+    .out-body { padding: 0 14px 13px; }
+    .out-body.collapsed { display: none; }
+    .out-text { font-size: 14px; color: var(--text-2); line-height: 1.75; white-space: pre-wrap; }
+    .out-bullets { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+    .out-bullet { display: flex; gap: 8px; font-size: 14px; color: var(--text-2); }
+    .out-dot { color: var(--brand); flex-shrink: 0; font-size: 16px; line-height: 1.4; }
+
+    .icon-btn {
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      border: none; background: transparent; cursor: pointer;
+      border-radius: 7px; font-size: 13px; color: var(--text-3);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .icon-btn:active { background: var(--border); }
+
+    #btn-copy {
+      width: 100%; padding: 14px; margin-top: 10px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--brand);
+      border-radius: var(--r-lg);
+      font-size: 15px; font-weight: 700;
+      color: var(--brand); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #btn-copy:active { background: var(--brand-light); }
+    #btn-copy.ok { border-color: var(--green); color: var(--green); background: #f0fdf4; }
+
+    /* ── History ── */
+    .hist-toggle {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none;
+      font-size: 13px; font-weight: 700; color: var(--text-3);
+      cursor: pointer; padding: 10px 2px; width: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hist-card {
+      border: 1.5px solid var(--border);
+      border-radius: var(--r); overflow: hidden; background: var(--bg-card);
+    }
+    .hist-card-hd {
+      padding: 12px 14px; cursor: pointer;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hist-card-hd:active { background: #f8f7f5; }
+    .hist-title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .hist-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .hist-body { padding: 0 14px 12px; border-top: 1px solid var(--border); }
+    .hist-sec-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-3); margin: 10px 0 3px; }
+    .hist-sec-text { font-size: 13px; color: var(--text-2); line-height: 1.65; }
+
+    /* ── Bottom sheet (student dropdown) ── */
+    #sheet-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 100;
+      display: flex; align-items: flex-end; justify-content: center;
+      backdrop-filter: blur(2px);
+    }
+    #sheet-overlay.hidden { display: none; }
+    .sheet {
+      background: var(--bg-card);
+      border-radius: 26px 26px 0 0;
+      width: 100%; max-width: 390px;
+      max-height: 72vh;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .sheet-handle { width: 38px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 4px; flex-shrink: 0; }
+    .sheet-title { font-size: 15px; font-weight: 700; text-align: center; padding: 6px 16px 12px; flex-shrink: 0; }
+    .sheet-scroll { overflow-y: auto; flex: 1; padding: 0 10px; }
+    .sheet-item {
+      display: flex; align-items: center; gap: 11px;
+      padding: 11px 8px; border-radius: var(--r);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sheet-item:active { background: #f8f7f5; }
+    .sheet-item.active { background: var(--brand-light); }
+    .sheet-item-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .sheet-item-goal { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+    .sheet-item-acts { margin-left: auto; display: flex; gap: 2px; flex-shrink: 0; }
+    .sheet-footer { border-top: 1px solid var(--border); padding: 12px; flex-shrink: 0; }
+    .btn-new-student {
+      width: 100%; padding: 12px;
+      background: var(--brand-light);
+      border: 1.5px dashed var(--brand);
+      border-radius: var(--r);
+      font-size: 14px; font-weight: 700;
+      color: #92400e; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-new-student:active { background: #fde68a; }
+
+    /* ── Modal (create/edit student) ── */
+    #modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      display: flex; align-items: flex-end; justify-content: center;
+      backdrop-filter: blur(3px);
+    }
+    #modal-overlay.hidden { display: none; }
+    .modal {
+      background: var(--bg-card);
+      border-radius: 26px 26px 0 0;
+      width: 100%; max-width: 390px;
+      padding: 20px 20px calc(env(safe-area-inset-bottom, 0px) + 20px);
+    }
+    .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; }
+    .field { margin-bottom: 11px; }
+    .field-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-3); margin-bottom: 5px; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 18px; }
+    .btn-cancel {
+      flex: 1; padding: 13px;
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: var(--r); font-size: 14px; font-weight: 600;
+      color: var(--text-2); cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-cancel:active { background: #f0eeeb; }
+    .btn-ok {
+      flex: 1.4; padding: 13px;
+      background: var(--brand); border: none;
+      border-radius: var(--r); font-size: 14px; font-weight: 800;
+      color: white; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-ok:disabled { background: #ccc9c4; cursor: not-allowed; }
+    .btn-ok:not(:disabled):active { background: var(--brand-dark); }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      top: 72px; left: 50%;
+      transform: translateX(-50%) translateY(-6px);
+      background: #1c1917; color: white;
+      padding: 10px 18px; border-radius: 22px;
+      font-size: 13px; font-weight: 600;
+      opacity: 0; transition: all 0.2s;
+      pointer-events: none; white-space: nowrap;
+      z-index: 999; box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.err  { background: var(--red); }
+    #toast.ok   { background: var(--green); }
+
+    /* ── No-speech note ── */
+    .note { font-size: 12px; color: var(--text-3); margin-top: 6px; line-height: 1.5; }
+
+    /* ── Subscription badge ── */
+    .sub-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; padding: 3px 9px;
+      border-radius: 99px; cursor: default;
+    }
+    .sub-badge.trial { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .sub-badge.free  { background: #f5f3f0; color: var(--text-2); border: 1px solid var(--border); }
+    .sub-badge.paid  { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .sub-badge-dot   { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+    /* ── Upgrade modal ── */
+    #upgrade-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 300;
+      display: flex; align-items: flex-end; justify-content: center;
+      backdrop-filter: blur(2px);
+    }
+    #upgrade-overlay.hidden { display: none; }
+    .upgrade-modal {
+      background: var(--bg-card); border-radius: 26px 26px 0 0;
+      width: 100%; max-width: 390px;
+      padding: 24px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
+    }
+    .upgrade-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+    .upgrade-sub   { font-size: 13px; color: var(--text-2); margin-bottom: 20px; line-height: 1.5; }
+    .upgrade-compare {
+      border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden; margin-bottom: 18px;
+    }
+    .upgrade-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      padding: 9px 14px; font-size: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .upgrade-row:last-child { border-bottom: none; }
+    .upgrade-row.head { background: #f5f3f0; font-weight: 700; font-size: 11px; color: var(--text-2); }
+    .upgrade-row span:first-child { color: var(--text-2); }
+    .upgrade-row span.yes { color: #059669; font-weight: 600; }
+    .upgrade-row span.no  { color: var(--text-3); }
+    .upgrade-price { text-align: center; margin-bottom: 14px; }
+    .upgrade-price strong { font-size: 26px; font-weight: 800; color: var(--text); }
+    .upgrade-price span   { font-size: 13px; color: var(--text-2); }
+    .upgrade-price small  { display: block; font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .btn-upgrade {
+      width: 100%; padding: 15px; background: var(--brand); border: none;
+      border-radius: var(--r-lg); font-size: 15px; font-weight: 800;
+      color: white; cursor: pointer; font-family: inherit;
+      box-shadow: 0 4px 14px rgba(245,158,11,.35); transition: opacity .15s;
+    }
+    .btn-upgrade:hover { opacity: .9; }
+    .btn-later {
+      width: 100%; margin-top: 10px; padding: 10px;
+      background: none; border: none; font-size: 13px;
+      color: var(--text-3); cursor: pointer; font-family: inherit;
+    }
+    .upgrade-limit-hint {
+      background: #fff8f0; border: 1px solid #fde68a;
+      border-radius: 10px; padding: 10px 12px;
+      font-size: 12px; color: #92400e; margin-bottom: 16px; line-height: 1.5;
+    }
+    .tone-btn.locked { opacity: .45; cursor: not-allowed; }
+    .tone-lock-icon { font-size: 10px; margin-left: 3px; }
+
+    /* ── Aspect hints ── */
+    .aspect-row {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-bottom: 10px;
+    }
+    .aspect-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 9px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+      background: #f5f3f0; border: 1px solid var(--border);
+      color: var(--text-2); cursor: default;
+      white-space: nowrap;
+    }
+    .aspect-tag .dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--brand); flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════ APP ════════════════════ -->
+<div id="app">
+
+  <!-- Header -->
+  <header id="app-header">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div class="hd-title">课后总结生成器</div>
+        <div class="hd-sub">瑜伽 · 普拉提私教专用</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div id="hd-count" style="font-size:11px;color:var(--text-3);display:none"></div>
+        <button id="sub-badge" class="sub-badge" onclick="showUpgrade('badge')"></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Scrollable content -->
+  <div id="main-scroll">
+
+    <!-- 1. 选择学员 -->
+    <div class="card">
+      <div class="card-label">选择学员</div>
+      <button id="student-chip" onclick="openSheet()">
+        <div class="avatar" id="chip-av">👤</div>
+        <div style="flex:1;min-width:0">
+          <div class="chip-main" id="chip-name">选择学员</div>
+          <div class="chip-sub" id="chip-sub">点击选择或新建</div>
+        </div>
+        <div class="chip-arrow">▾</div>
+      </button>
+      <div class="tag-row" id="chip-tags" style="display:none"></div>
+    </div>
+
+    <!-- 2. 课堂记录输入 -->
+    <div class="card">
+      <div class="card-label">课堂记录</div>
+      <p class="note" style="margin-bottom:10px">随口说就行，不用刻意分段，可以涵盖以下方面：</p>
+      <div class="aspect-row">
+        <span class="aspect-tag"><span class="dot"></span>本节课目标</span>
+        <span class="aspect-tag"><span class="dot"></span>训练内容</span>
+        <span class="aspect-tag"><span class="dot"></span>学员表现</span>
+        <span class="aspect-tag"><span class="dot"></span>课后建议</span>
+        <span class="aspect-tag"><span class="dot"></span>下次课重点</span>
+      </div>
+      <div style="position:relative">
+        <p class="note" style="margin-bottom:6px;color:var(--brand);font-weight:600">✨ 输入越具体，输出越个性化！</p>
+        <textarea id="raw-input" rows="6"
+          placeholder="例如：今天练了骨盆稳定和单腿桥，李姐耸肩问题还是有，拉伸做得挺不错，下次要练核心激活…"
+          oninput="onInput()"></textarea>
+      </div>
+      <div id="rec-badge" class="rec-badge" style="display:none">
+        <div class="rec-dot"></div>录音中，说完点停止
+      </div>
+      <div class="voice-row">
+        <button class="btn-voice start" id="btn-voice" onclick="toggleVoice()">🎤 开始录音</button>
+        <button class="btn-text" id="btn-text" onclick="toggleTextMode()">⌨️ 文字</button>
+        <button class="btn-clr" id="btn-clr" onclick="clearInput()" style="display:none">清空</button>
+      </div>
+      <p id="no-speech" class="note" style="display:none">当前浏览器不支持语音，请用 Chrome 或 Edge 打开</p>
+    </div>
+
+    <!-- 3. 语气选择 -->
+    <div class="card">
+      <div class="card-label">发给学员的语气</div>
+      <div class="tone-grid" id="tone-grid"></div>
+    </div>
+
+    <!-- 4. 生成按钮 -->
+    <button id="btn-gen" onclick="generate()" disabled>
+      ✨ 生成课后总结
+    </button>
+
+    <!-- 5. 输出结果 -->
+    <div id="section-output" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-3)">生成结果</div>
+        <div style="font-size:11px;color:var(--text-3)" id="out-for"></div>
+      </div>
+      <div id="out-sections" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button id="btn-copy" onclick="copyAll()">📋 复制全文</button>
+    </div>
+
+    <!-- 6. 历史记录 -->
+    <div id="section-hist" style="display:none">
+      <button class="hist-toggle" onclick="toggleHist()">
+        <span id="hist-chevron">▾</span>
+        <span id="hist-label">历史总结</span>
+      </button>
+      <div id="hist-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+  </div><!-- /main-scroll -->
+</div><!-- /app -->
+
+
+<!-- ════════════════════ BOTTOM SHEET (学员选择) ════════════════════ -->
+<div id="sheet-overlay" class="hidden" onclick="closeSheet(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">选择学员</div>
+    <div class="sheet-scroll" id="sheet-list"></div>
+    <div class="sheet-footer">
+      <button class="btn-new-student" onclick="openModal('create')">＋ 新建学员</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════ MODAL (新建/编辑学员) ════════════════════ -->
+<div id="modal-overlay" class="hidden" onclick="closeModalByOverlay(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title" id="modal-title">新建学员</div>
+    <div class="field">
+      <label class="field-label">真实姓名 *</label>
+      <input type="text" id="f-name" placeholder="如：李晓红" oninput="validateForm()">
+    </div>
+    <div class="field">
+      <label class="field-label">称呼 *</label>
+      <input type="text" id="f-addr" placeholder="如：晓红、李姐" oninput="validateForm()">
+    </div>
+    <div class="field">
+      <label class="field-label">训练目标</label>
+      <input type="text" id="f-goal" placeholder="如：改善驼背、核心力量训练">
+    </div>
+    <div class="field">
+      <label class="field-label">身体注意事项</label>
+      <input type="text" id="f-pain" placeholder="如：腰椎间盘突出、左膝不适">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-ok" id="modal-ok" onclick="submitModal()" disabled>创建</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ════════════════════ UPGRADE MODAL ════════════════════ -->
+<div id="upgrade-overlay" class="hidden" onclick="closeUpgradeByOverlay(event)">
+  <div class="upgrade-modal" onclick="event.stopPropagation()">
+    <div class="upgrade-title">解锁专业版</div>
+    <div class="upgrade-sub" id="upgrade-hint-text">升级后无限次生成，无上限学员档案</div>
+    <div id="upgrade-limit-hint-box" style="display:none" class="upgrade-limit-hint"></div>
+    <div class="upgrade-compare">
+      <div class="upgrade-row head">
+        <span>功能</span><span>免费版</span><span>专业版</span>
+      </div>
+      <div class="upgrade-row">
+        <span>课后总结生成</span><span class="no">20次/月</span><span class="yes">无限次</span>
+      </div>
+      <div class="upgrade-row">
+        <span>学员档案</span><span class="no">5个</span><span class="yes">无限个</span>
+      </div>
+      <div class="upgrade-row">
+        <span>历史记录</span><span class="no">最近5条</span><span class="yes">全部保留</span>
+      </div>
+      <div class="upgrade-row">
+        <span>语气风格</span><span class="no">2种</span><span class="yes">4种</span>
+      </div>
+    </div>
+    <div class="upgrade-price">
+      <strong>¥29</strong><span> / 月</span>
+      <small>年付 ¥199，折合 ¥16.6/月</small>
+    </div>
+    <button class="btn-upgrade" onclick="handleUpgradeClick()">立即升级专业版</button>
+    <button class="btn-later" onclick="closeUpgrade()">暂不升级</button>
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════
+const API = 'http://localhost:3002';
+
+// ══════════════════════════════════════════════════
+// SUBSCRIPTION
+// ══════════════════════════════════════════════════
+const SUB = {
+  TRIAL_DAYS   : 7,
+  FREE_GEN     : 20,   // 次/月
+  FREE_STUDENTS: 5,
+  FREE_HISTORY : 5,    // 条/学员
+  FREE_TONES   : ['专业温和','温暖鼓励'],
+};
+const SK_TRIAL  = 'yoga_sub_trial_start';
+const SK_STATUS = 'yoga_sub_status';       // 'trial'|'free'|'paid'
+const SK_GENLOG = 'yoga_sub_genlog';       // { month:'YYYY-MM', count:N }
+
+function subGetStatus() {
+  return localStorage.getItem(SK_STATUS) || 'new';
+}
+function subSetStatus(s) { localStorage.setItem(SK_STATUS, s); }
+
+function subTrialStart() {
+  if (!localStorage.getItem(SK_TRIAL)) {
+    localStorage.setItem(SK_TRIAL, new Date().toISOString());
+    subSetStatus('trial');
+  }
+}
+function subTrialDaysLeft() {
+  const start = localStorage.getItem(SK_TRIAL);
+  if (!start) return 0;
+  const diff = Date.now() - new Date(start).getTime();
+  const left = SUB.TRIAL_DAYS - Math.floor(diff / 86400000);
+  return Math.max(0, left);
+}
+function subCheckTrial() {
+  if (subGetStatus() !== 'trial') return;
+  if (subTrialDaysLeft() === 0) subSetStatus('free');
+}
+
+function subGenMonth() {
+  return new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+}
+function subGenCount() {
+  try {
+    const log = JSON.parse(localStorage.getItem(SK_GENLOG) || '{}');
+    return log.month === subGenMonth() ? (log.count || 0) : 0;
+  } catch { return 0; }
+}
+function subGenIncrement() {
+  const count = subGenCount() + 1;
+  localStorage.setItem(SK_GENLOG, JSON.stringify({ month: subGenMonth(), count }));
+}
+
+function subIsPaid()  { return subGetStatus() === 'paid'; }
+function subIsTrial() { return subGetStatus() === 'trial'; }
+function subIsFree()  { return subGetStatus() === 'free' || subGetStatus() === 'new'; }
+function subUnlimited() { return subIsPaid() || subIsTrial(); }
+
+function subCanGenerate() {
+  if (subUnlimited()) return true;
+  return subGenCount() < SUB.FREE_GEN;
+}
+function subCanAddStudent() {
+  if (subUnlimited()) return true;
+  return getStudents().length < SUB.FREE_STUDENTS;
+}
+
+// 更新 Header 状态标签
+function subRenderBadge() {
+  const el = document.getElementById('sub-badge');
+  if (!el) return;
+  const status = subGetStatus();
+  if (status === 'trial') {
+    const left = subTrialDaysLeft();
+    el.className = 'sub-badge trial';
+    el.innerHTML = `<span class="sub-badge-dot"></span>试用期 · 剩余 ${left} 天`;
+  } else if (subIsPaid()) {
+    el.className = 'sub-badge paid';
+    el.innerHTML = `<span class="sub-badge-dot"></span>专业版`;
+  } else {
+    const used = subGenCount();
+    el.className = 'sub-badge free';
+    el.innerHTML = `<span class="sub-badge-dot"></span>免费版 · ${used}/${SUB.FREE_GEN} 次`;
+  }
+}
+
+// 升级弹窗
+function showUpgrade(reason) {
+  const hintEl = document.getElementById('upgrade-limit-hint-box');
+  const subEl  = document.getElementById('upgrade-hint-text');
+  if (reason === 'gen') {
+    hintEl.textContent = `本月已生成 ${subGenCount()} 次，免费版每月限 ${SUB.FREE_GEN} 次。升级后无限使用。`;
+    hintEl.style.display = '';
+    subEl.textContent = '已达本月生成上限';
+  } else if (reason === 'student') {
+    hintEl.textContent = `免费版最多管理 ${SUB.FREE_STUDENTS} 位学员，升级后无限添加。`;
+    hintEl.style.display = '';
+    subEl.textContent = '已达学员数量上限';
+  } else {
+    hintEl.style.display = 'none';
+    subEl.textContent = '升级后无限次生成，无上限学员档案';
+  }
+  document.getElementById('upgrade-overlay').classList.remove('hidden');
+}
+function closeUpgrade() {
+  document.getElementById('upgrade-overlay').classList.add('hidden');
+}
+function closeUpgradeByOverlay(e) {
+  if (e.target.id === 'upgrade-overlay') closeUpgrade();
+}
+function handleUpgradeClick() {
+  // MVP 阶段：弹出提示，后续接入支付
+  toast('支付功能即将上线，敬请期待 🎉', '');
+  closeUpgrade();
+}
+
+// 初始化订阅状态
+function subInit() {
+  subCheckTrial();
+  subRenderBadge();
+}
+
+// ══════════════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════════════
+const SK = 'yoga_summary_students';
+
+function getStudents() {
+  try { return JSON.parse(localStorage.getItem(SK) || '[]'); } catch { return []; }
+}
+function saveStudents(arr) { localStorage.setItem(SK, JSON.stringify(arr)); }
+
+function createStudent(d) {
+  const s = { ...d, id: crypto.randomUUID(), history: [] };
+  const arr = getStudents(); arr.unshift(s); saveStudents(arr); return s;
+}
+function updateStudent(id, p) {
+  saveStudents(getStudents().map(s => s.id === id ? { ...s, ...p } : s));
+}
+function deleteStudent(id) { saveStudents(getStudents().filter(s => s.id !== id)); }
+function getById(id) { return getStudents().find(s => s.id === id); }
+function appendRecord(sid, rec) {
+  saveStudents(getStudents().map(s =>
+    s.id !== sid ? s : { ...s, history: [rec, ...s.history].slice(0, 10) }
+  ));
+}
+
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+let S = {
+  student: null,
+  rawInput: '',
+  tone: '温暖鼓励',
+  sections: null,
+  listening: false,
+  loading: false,
+  histOpen: false,
+  modalMode: null,
+  editId: null,
+};
+
+// ══════════════════════════════════════════════════
+// TONES
+// ══════════════════════════════════════════════════
+const TONES = [
+  { v: '专业温和',  d: '准确有亲和力' },
+  { v: '温暖鼓励',  d: '有人情味，多肯定' },
+  { v: '轻松朋友',  d: '口语化，像朋友' },
+  { v: '简洁干练',  d: '简短直接' },
+];
+
+function renderTones() {
+  const allowed = subUnlimited() ? null : SUB.FREE_TONES;
+  document.getElementById('tone-grid').innerHTML = TONES.map(t => {
+    const locked = allowed && !allowed.includes(t.v);
+    if (locked && !allowed.includes(S.tone)) { /* keep default */ }
+    return `
+    <button class="tone-btn ${S.tone === t.v ? 'on' : ''} ${locked ? 'locked' : ''}"
+      onclick="${locked ? "showUpgrade('tone')" : `setTone('${t.v}')`}">
+      <div class="tone-name">${t.v}${locked ? '<span class="tone-lock-icon">🔒</span>' : ''}</div>
+      <div class="tone-desc">${t.d}</div>
+    </button>`;
+  }).join('');
+}
+function setTone(v) { S.tone = v; renderTones(); }
+
+// ══════════════════════════════════════════════════
+// VOICE INPUT
+// ══════════════════════════════════════════════════
+const FILLER = /[嗯啊呢吧哦哈就那个然后这个]/g;
+let recog = null, accText = '', textMode = false;
+const speechOK = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+
+function initVoice() {
+  if (!speechOK) {
+    document.getElementById('btn-voice').style.display = 'none';
+    document.getElementById('no-speech').style.display = 'block';
+    textMode = true;
+    document.getElementById('btn-text').classList.add('on');
+  }
+}
+
+function toggleVoice() {
+  S.listening ? stopRec() : startRec();
+}
+
+function startRec() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  recog = new SR();
+  recog.lang = 'zh-CN';
+  recog.continuous = true;
+  recog.interimResults = true;
+  accText = S.rawInput;
+
+  recog.onresult = e => {
+    let fin = '', tmp = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      e.results[i].isFinal ? fin += t : tmp += t;
+    }
+    if (fin) {
+      const c = fin.replace(FILLER, '').trim();
+      if (c) accText = accText ? accText + '，' + c : c;
+      S.rawInput = accText;
+    }
+    document.getElementById('raw-input').value =
+      accText + (tmp ? '…' + tmp.replace(FILLER, '') : '');
+    updGenBtn(); updClrBtn();
+  };
+  recog.onerror = e => {
+    if (e.error !== 'aborted') toast('语音识别出错，请重试', 'err');
+    setRec(false);
+  };
+  recog.onend = () => setRec(false);
+  recog.start();
+  setRec(true);
+}
+
+function stopRec() { recog && recog.stop(); setRec(false); }
+
+function setRec(v) {
+  S.listening = v;
+  const btn = document.getElementById('btn-voice');
+  const badge = document.getElementById('rec-badge');
+  const ta = document.getElementById('raw-input');
+  if (v) {
+    btn.className = 'btn-voice stop'; btn.textContent = '⏹ 停止录音';
+    badge.style.display = 'flex'; ta.classList.add('rec'); ta.readOnly = true;
+  } else {
+    btn.className = 'btn-voice start'; btn.textContent = '🎤 开始录音';
+    badge.style.display = 'none'; ta.classList.remove('rec'); ta.readOnly = false;
+    ta.value = S.rawInput;
+  }
+}
+
+function toggleTextMode() {
+  stopRec();
+  textMode = !textMode;
+  document.getElementById('btn-text').classList.toggle('on', textMode);
+  document.getElementById('raw-input').focus();
+}
+
+function onInput() {
+  S.rawInput = document.getElementById('raw-input').value;
+  accText = S.rawInput;
+  updGenBtn(); updClrBtn();
+}
+function clearInput() {
+  S.rawInput = ''; accText = '';
+  document.getElementById('raw-input').value = '';
+  updGenBtn(); updClrBtn();
+}
+function updClrBtn() {
+  document.getElementById('btn-clr').style.display = S.rawInput.trim() ? '' : 'none';
+}
+
+// ══════════════════════════════════════════════════
+// STUDENT CHIP
+// ══════════════════════════════════════════════════
+function renderChip() {
+  const s = S.student;
+  const av = document.getElementById('chip-av');
+  const nm = document.getElementById('chip-name');
+  const sb = document.getElementById('chip-sub');
+  const tg = document.getElementById('chip-tags');
+  const ch = document.getElementById('student-chip');
+  const hc = document.getElementById('hd-count');
+
+  if (!s) {
+    av.textContent = '👤'; av.style.background = 'var(--text-3)';
+    nm.textContent = '选择学员'; sb.textContent = '点击选择或新建';
+    ch.classList.remove('has-student'); tg.style.display = 'none'; hc.style.display = 'none';
+    return;
+  }
+  av.textContent = s.address.slice(0, 1); av.style.background = strColor(s.address);
+  nm.textContent = s.address;
+  sb.textContent = s.name + (s.history.length ? ` · ${s.history.length} 条历史` : '');
+  ch.classList.add('has-student');
+  if (s.history.length) { hc.textContent = `${s.history.length} 条记录`; hc.style.display = ''; }
+  else hc.style.display = 'none';
+
+  let tags = '';
+  if (s.goal) tags += `<span class="tag goal"><span class="tag-k">目标</span>${s.goal}</span>`;
+  if (s.painPoints) tags += `<span class="tag pain"><span class="tag-k">注意</span>${s.painPoints}</span>`;
+  if (tags) { tg.innerHTML = tags; tg.style.display = 'flex'; } else tg.style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════
+// SHEET (student list)
+// ══════════════════════════════════════════════════
+function openSheet() {
+  stopRec();
+  renderSheet();
+  document.getElementById('sheet-overlay').classList.remove('hidden');
+}
+function closeSheet(e) {
+  if (e.target.id === 'sheet-overlay')
+    document.getElementById('sheet-overlay').classList.add('hidden');
+}
+function renderSheet() {
+  const list = getStudents();
+  const el = document.getElementById('sheet-list');
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;padding:28px;color:var(--text-3);font-size:13px">还没有学员，先新建一位</div>';
+    return;
+  }
+  el.innerHTML = list.map(s => `
+    <div class="sheet-item ${S.student?.id === s.id ? 'active' : ''}" onclick="selectStudent('${s.id}')">
+      <div class="avatar" style="background:${strColor(s.address)}">${s.address.slice(0,1)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="sheet-item-name">${s.address}</div>
+        ${s.goal ? `<div class="sheet-item-goal">${s.goal}</div>` : ''}
+      </div>
+      <div class="sheet-item-acts" onclick="event.stopPropagation()">
+        <button class="icon-btn" onclick="openModal('edit','${s.id}')">✏️</button>
+        <button class="icon-btn" onclick="confirmDel('${s.id}')">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+function selectStudent(id) {
+  S.student = getById(id);
+  S.sections = null;
+  document.getElementById('sheet-overlay').classList.add('hidden');
+  renderChip(); renderHist(); updGenBtn();
+  document.getElementById('section-output').style.display = 'none';
+}
+function confirmDel(id) {
+  if (!confirm('确认删除这位学员及所有历史记录？')) return;
+  if (S.student?.id === id) {
+    S.student = null; renderChip();
+    document.getElementById('section-output').style.display = 'none';
+    document.getElementById('section-hist').style.display = 'none';
+  }
+  deleteStudent(id); renderSheet(); updGenBtn();
+}
+
+// ══════════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════════
+function openModal(mode, id) {
+  document.getElementById('sheet-overlay').classList.add('hidden');
+  S.modalMode = mode; S.editId = id || null;
+  const title = document.getElementById('modal-title');
+  const ok = document.getElementById('modal-ok');
+  if (mode === 'create') {
+    title.textContent = '新建学员'; ok.textContent = '创建';
+    ['f-name','f-addr','f-goal','f-pain'].forEach(i => document.getElementById(i).value = '');
+  } else {
+    const s = getById(id); if (!s) return;
+    title.textContent = '编辑学员'; ok.textContent = '保存';
+    document.getElementById('f-name').value = s.name;
+    document.getElementById('f-addr').value = s.address;
+    document.getElementById('f-goal').value = s.goal || '';
+    document.getElementById('f-pain').value = s.painPoints || '';
+  }
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  validateForm();
+  setTimeout(() => document.getElementById('f-name').focus(), 120);
+}
+function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+function closeModalByOverlay(e) { if (e.target.id === 'modal-overlay') closeModal(); }
+function validateForm() {
+  const ok = document.getElementById('f-name').value.trim() &&
+             document.getElementById('f-addr').value.trim();
+  document.getElementById('modal-ok').disabled = !ok;
+}
+function submitModal() {
+  const d = {
+    name: document.getElementById('f-name').value.trim(),
+    address: document.getElementById('f-addr').value.trim(),
+    goal: document.getElementById('f-goal').value.trim() || undefined,
+    painPoints: document.getElementById('f-pain').value.trim() || undefined,
+  };
+  if (S.modalMode === 'create') {
+    if (!subCanAddStudent()) { closeModal(); showUpgrade('student'); return; }
+    const s = createStudent(d);
+    S.student = s; renderChip(); renderHist(); updGenBtn();
+  } else {
+    updateStudent(S.editId, d);
+    if (S.student?.id === S.editId) { S.student = getById(S.editId); renderChip(); }
+  }
+  closeModal();
+  document.getElementById('section-output').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════
+// GENERATE
+// ══════════════════════════════════════════════════
+function updGenBtn() {
+  document.getElementById('btn-gen').disabled =
+    !(S.student && S.rawInput.trim() && !S.loading);
+}
+
+async function generate() {
+  if (!S.student) { toast('请先选择学员', 'err'); return; }
+  if (!S.rawInput.trim()) { toast('请先输入课堂记录', 'err'); return; }
+  if (!subCanGenerate()) { showUpgrade('gen'); return; }
+  // 首次生成时启动试用期
+  if (subGetStatus() === 'new') { subTrialStart(); subRenderBadge(); }
+  stopRec();
+  S.loading = true; updGenBtn(); setGenLoading(true);
+
+  const s = S.student;
+  const recentHistory = s.history[0]
+    ? `上次课：${s.history[0].sections.classGoal || ''}，${s.history[0].sections.nextFocus || ''}`
+    : null;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 150000); // 2.5分钟超时
+
+    const res = await fetch(`${API}/api/summary`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        rawInput: S.rawInput.trim(),
+        studentName: s.name,
+        studentAddress: s.address,
+        goal: s.goal,
+        painPoints: s.painPoints,
+        recentHistory,
+        tone: S.tone,
+      }),
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    S.sections = data.sections;
+
+    const rec = {
+      id: crypto.randomUUID(),
+      date: new Date().toISOString(),
+      rawInput: S.rawInput.trim(),
+      tone: S.tone,
+      sections: data.sections,
+    };
+    appendRecord(s.id, rec);
+    subGenIncrement(); subRenderBadge();
+    S.student = getById(s.id);
+    renderChip(); renderOutput(); renderHist();
+    toast('总结生成成功 ✓', 'ok');
+    setTimeout(() => {
+      document.getElementById('section-output').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+  } catch (err) {
+    console.error(err);
+    if (err.name === 'AbortError') {
+      toast('生成超时，请稍等1分钟后再试', 'err');
+    } else {
+      toast('生成失败，请确认后端服务已启动', 'err');
+    }
+  } finally {
+    S.loading = false; setGenLoading(false); updGenBtn();
+  }
+}
+
+let genTimerInterval = null;
+function setGenLoading(on) {
+  const btn = document.getElementById('btn-gen');
+  if (on) {
+    let secs = 0;
+    const labels = ['AI 正在理解课堂记录', 'AI 正在生成总结', '正在润色措辞'];
+    btn.innerHTML = `<div class="spinner"></div> ${labels[0]}…`;
+    genTimerInterval = setInterval(() => {
+      secs++;
+      const label = labels[Math.min(Math.floor(secs / 20), labels.length - 1)];
+      btn.innerHTML = `<div class="spinner"></div> ${label}（${secs}s）`;
+    }, 1000);
+  } else {
+    clearInterval(genTimerInterval);
+    genTimerInterval = null;
+    btn.innerHTML = '✨ 生成课后总结';
+  }
+}
+
+// ══════════════════════════════════════════════════
+// OUTPUT
+// ══════════════════════════════════════════════════
+const SECTIONS = [
+  { key: 'classGoal',          label: '本节课目标',   isArr: true,  hint: '每行一条目标' },
+  { key: 'trainingContent',    label: '训练内容',     isArr: true,  hint: '每行一个动作' },
+  { key: 'studentPerformance', label: '学员表现',     isArr: false },
+  { key: 'postClassAdvice',    label: '课后建议',     isArr: true,  hint: '每行一条建议' },
+  { key: 'nextFocus',          label: '下次课重点',   isArr: false },
+];
+
+function renderOutput() {
+  const sc = S.sections; if (!sc) return;
+  document.getElementById('section-output').style.display = '';
+  document.getElementById('out-for').textContent = '为 ' + (S.student?.address || '') + ' 生成';
+
+  document.getElementById('out-sections').innerHTML = SECTIONS.map(cfg => {
+    const val = sc[cfg.key];
+    const empty = !val || (Array.isArray(val) && !val.length) || val === '';
+    const body = empty
+      ? '<div style="font-size:13px;color:var(--text-3);padding:4px 0">（无内容）</div>'
+      : cfg.isArr
+        ? `<ul class="out-bullets">${val.map(i=>`<li class="out-bullet"><span class="out-dot">·</span><span>${i}</span></li>`).join('')}</ul>`
+        : `<div class="out-text">${esc(val)}</div>`;
+
+    return `<div class="out-section" id="os-${cfg.key}">
+      <div class="out-hd" onclick="toggleSec('${cfg.key}')">
+        <div class="out-key">${cfg.label}</div>
+        <div class="out-actions">
+          ${!empty ? `<button class="icon-btn" onclick="event.stopPropagation();editSec('${cfg.key}')">✏️</button>` : ''}
+          <span id="osc-${cfg.key}" style="font-size:11px;color:var(--text-3)">▴</span>
+        </div>
+      </div>
+      <div class="out-body" id="osb-${cfg.key}">${body}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSec(k) {
+  const b = document.getElementById('osb-' + k);
+  const c = document.getElementById('osc-' + k);
+  const col = b.classList.toggle('collapsed');
+  c.textContent = col ? '▾' : '▴';
+}
+
+function editSec(k) {
+  const cfg = SECTIONS.find(c => c.key === k);
+  const val = S.sections[k];
+  const cur = cfg.isArr ? (val || []).join('\n') : (val || '');
+  document.getElementById('osb-' + k).innerHTML =
+    `<textarea id="eta-${k}" rows="${cfg.isArr ? Math.max(3, (val||[]).length) : 4}" style="margin-bottom:6px">${cur}</textarea>
+     ${cfg.hint ? `<div class="note" style="margin-bottom:6px">${cfg.hint}</div>` : ''}
+     <button onclick="saveSec('${k}')" style="font-size:12px;font-weight:700;color:var(--brand);background:none;border:none;cursor:pointer;padding:0">完成编辑</button>`;
+  document.getElementById('eta-' + k).focus();
+}
+
+function saveSec(k) {
+  const cfg = SECTIONS.find(c => c.key === k);
+  const v = document.getElementById('eta-' + k).value.trim();
+  S.sections[k] = cfg.isArr
+    ? v.split('\n').map(l => l.replace(/^[·•\-]\s*/, '').trim()).filter(Boolean)
+    : v;
+  renderOutput();
+}
+
+function copyAll() {
+  const sc = S.sections; if (!sc) return;
+  const lines = [];
+  SECTIONS.forEach(cfg => {
+    const v = sc[cfg.key];
+    if (!v || (Array.isArray(v) && !v.length) || v === '') return;
+    lines.push(`【${cfg.label}】`);
+    if (Array.isArray(v)) v.forEach(i => lines.push('· ' + i));
+    else lines.push(v);
+    lines.push('');
+  });
+  navigator.clipboard.writeText(lines.join('\n').trim()).then(() => {
+    const btn = document.getElementById('btn-copy');
+    btn.className = 'ok'; btn.innerHTML = '✓ 已复制';
+    setTimeout(() => { btn.className = ''; btn.innerHTML = '📋 复制全文'; }, 2200);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════════════
+function renderHist() {
+  const s = S.student;
+  const sec = document.getElementById('section-hist');
+  if (!s || !s.history.length) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  document.getElementById('hist-label').textContent = `历史总结（${s.history.length} 条）`;
+  if (S.histOpen) renderHistList();
+}
+
+function toggleHist() {
+  S.histOpen = !S.histOpen;
+  document.getElementById('hist-chevron').textContent = S.histOpen ? '▴' : '▾';
+  const el = document.getElementById('hist-list');
+  if (S.histOpen) { renderHistList(); }
+  else el.innerHTML = '';
+}
+
+function renderHistList() {
+  const s = S.student; if (!s) return;
+  const histToShow = subUnlimited() ? s.history : s.history.slice(0, SUB.FREE_HISTORY);
+  const hiddenCount = s.history.length - histToShow.length;
+  document.getElementById('hist-list').innerHTML = histToShow.map((rec, i) => {
+    const d = new Date(rec.date).toLocaleDateString('zh-CN',
+      { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const sc = rec.sections;
+    return `<div class="hist-card">
+      <div class="hist-card-hd" onclick="toggleHistCard('hb${i}','hc${i}')">
+        <div style="flex:1;min-width:0">
+          <div class="hist-title">${sc.classGoal || '课后总结'}</div>
+          <div class="hist-meta">${d} · ${rec.tone}</div>
+        </div>
+        <span id="hc${i}" style="font-size:12px;color:var(--text-3);flex-shrink:0;margin-top:2px">▾</span>
+      </div>
+      <div class="hist-body" id="hb${i}" style="display:none">
+        ${sc.classGoal ? `<div class="hist-sec-title">本节课目标</div><div class="hist-sec-text">${esc(sc.classGoal)}</div>` : ''}
+        ${sc.trainingContent?.length ? `<div class="hist-sec-title">训练内容</div><div class="hist-sec-text">${sc.trainingContent.map(t=>'· '+t).join('<br>')}</div>` : ''}
+        ${sc.studentPerformance ? `<div class="hist-sec-title">学员表现</div><div class="hist-sec-text">${esc(sc.studentPerformance)}</div>` : ''}
+        ${sc.postClassAdvice ? `<div class="hist-sec-title">课后建议</div><div class="hist-sec-text">${esc(sc.postClassAdvice)}</div>` : ''}
+        ${sc.nextFocus ? `<div class="hist-sec-title">下次课重点</div><div class="hist-sec-text">${esc(sc.nextFocus)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('') + (hiddenCount > 0
+    ? `<button onclick="showUpgrade('hist')" style="width:100%;padding:10px;background:none;border:1px dashed var(--border);border-radius:var(--r);font-size:12px;color:var(--text-3);cursor:pointer;font-family:inherit">
+        🔒 还有 ${hiddenCount} 条历史记录，升级查看全部
+      </button>`
+    : '');
+}
+
+function toggleHistCard(bid, cid) {
+  const b = document.getElementById(bid), c = document.getElementById(cid);
+  const v = b.style.display === 'none';
+  b.style.display = v ? '' : 'none'; c.textContent = v ? '▴' : '▾';
+}
+
+// ══════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show' + (type ? ' ' + type : '');
+  setTimeout(() => { el.className = ''; }, 2600);
+}
+
+function strColor(s) {
+  const cs = ['#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#84cc16','#ef4444'];
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = s.charCodeAt(i) + ((h << 5) - h);
+  return cs[Math.abs(h) % cs.length];
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+function init() {
+  subInit();
+  initVoice();
+  renderTones();
+  const students = getStudents();
+  if (students.length) {
+    S.student = students[0];
+    renderChip();
+    renderHist();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
