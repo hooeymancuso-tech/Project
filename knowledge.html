@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>瑜伽普拉提老师知识库</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        violet: {
+          50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe',
+          300: '#c4b5fd', 400: '#a78bfa', 500: '#8b5cf6',
+          600: '#7c3aed', 700: '#6d28d9', 800: '#5b21b6', 900: '#4c1d95'
+        }
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+  .page { display: none; }
+  .page.active { display: block; }
+  #page-aichat.active { display: flex; flex-direction: column; height: 100%; }
+  .nav-item { transition: all 0.15s; }
+  .nav-item.active { background: #f5f3ff; color: #6d28d9; }
+  .badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 10px; font-size: 12px; font-weight: 500; }
+  .card { background: white; border: 1px solid #f3f4f6; border-radius: 12px; padding: 16px; transition: box-shadow 0.2s; }
+  .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  .processing-dot { width: 6px; height: 6px; background: #7c3aed; border-radius: 50%; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .tab-btn { padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; transition: all 0.15s; color: #6b7280; }
+  .tab-btn.active { background: white; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .tag-btn { padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; background: #f3f4f6; color: #4b5563; cursor: pointer; transition: all 0.15s; border: none; }
+  .tag-btn:hover, .tag-btn.selected { background: #ede9fe; color: #6d28d9; }
+  .modal { display: none; position: fixed; inset: 0; z-index: 50; }
+  .modal.open { display: flex; }
+  .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); }
+  .modal-content { position: relative; z-index: 1; margin: auto; max-height: 90vh; overflow-y: auto; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- 应用壳 -->
+<div class="flex h-screen overflow-hidden">
+
+  <!-- 侧边导航 -->
+  <aside class="w-56 bg-white border-r border-gray-100 flex flex-col py-6 shrink-0">
+    <div class="px-5 mb-8 flex items-center gap-2">
+      <span class="text-2xl">🧘</span>
+      <span class="font-bold text-gray-900">瑜伽知识库</span>
+    </div>
+    <nav class="flex-1 px-3 space-y-1">
+      <button onclick="showPage('library')" class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600" id="nav-library">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        我的知识库
+      </button>
+      <button onclick="showPage('upload')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600" id="nav-upload">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        上传笔记
+      </button>
+      <button onclick="showPage('aichat')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600" id="nav-aichat">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        AI问答
+      </button>
+      <button onclick="showPage('search')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600" id="nav-search">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        检索
+      </button>
+      <button onclick="showPage('shared')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600" id="nav-shared">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        共享知识库
+      </button>
+      <button onclick="showPage('subscribe')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600" id="nav-subscribe">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        订阅与权益
+      </button>
+    </nav>
+    <!-- 用户信息 -->
+    <div class="px-3 border-t border-gray-100 pt-4">
+      <button onclick="showPage('profile')" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-lg" id="nav-profile">
+        <div class="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 font-bold text-sm">李</div>
+        <div class="flex-1 text-left">
+          <p class="text-sm font-medium text-gray-900">李老师</p>
+          <p class="text-xs text-gray-400">280 积分</p>
+        </div>
+        <div class="relative">
+          <svg width="16" height="16" fill="none" stroke="#9ca3af" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full text-white text-[9px] flex items-center justify-center">2</span>
+        </div>
+      </button>
+    </div>
+  </aside>
+
+  <!-- 主内容 -->
+  <main class="flex-1 overflow-auto">
+
+    <!-- ══════════════ 个人知识库 ══════════════ -->
+    <div class="page active" id="page-library">
+      <div class="p-6 max-w-5xl mx-auto">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">我的知识库</h1>
+            <p class="text-sm text-gray-500 mt-0.5">6 条笔记</p>
+          </div>
+          <button onclick="showPage('upload')" class="flex items-center gap-1.5 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            上传笔记
+          </button>
+        </div>
+
+        <!-- AI处理中提示 -->
+        <div class="mb-4 px-4 py-3 bg-violet-50 border border-violet-200 rounded-lg flex items-center gap-2 text-sm text-violet-700">
+          <div class="processing-dot"></div>
+          1 条笔记正在 AI 整理中...
+        </div>
+
+        <!-- 视图切换 + 标签 -->
+        <div class="flex items-center gap-3 mb-5 flex-wrap">
+          <div class="flex gap-1 bg-gray-100 rounded-lg p-1">
+            <button class="tab-btn active" onclick="switchView('card', this)">
+              <span class="flex items-center gap-1.5">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                卡片
+              </span>
+            </button>
+            <button class="tab-btn" onclick="switchView('timeline', this)">
+              <span class="flex items-center gap-1.5">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                时间线
+              </span>
+            </button>
+            <button class="tab-btn" onclick="switchView('tag', this)">
+              <span class="flex items-center gap-1.5">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                标签
+              </span>
+            </button>
+          </div>
+          <div class="flex gap-1.5 flex-wrap" id="tag-filters">
+            <button class="tag-btn" onclick="toggleTag(this, '髋关节')">髋关节</button>
+            <button class="tag-btn" onclick="toggleTag(this, '骨盆')">骨盆</button>
+            <button class="tag-btn" onclick="toggleTag(this, '脊柱')">脊柱</button>
+            <button class="tag-btn" onclick="toggleTag(this, '核心稳定')">核心稳定</button>
+            <button class="tag-btn" onclick="toggleTag(this, '肩颈')">肩颈</button>
+            <button class="tag-btn" onclick="toggleTag(this, '普拉提基础')">普拉提基础</button>
+            <button class="tag-btn" onclick="toggleTag(this, '久坐族')">久坐族</button>
+            <button class="tag-btn" onclick="toggleTag(this, '口令技巧')">口令技巧</button>
+          </div>
+        </div>
+
+        <!-- 动态渲染区 -->
+        <div id="library-container"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ 上传页 ══════════════ -->
+    <div class="page" id="page-upload">
+      <div class="p-6 max-w-2xl mx-auto">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-900">上传笔记</h1>
+          <p class="text-sm text-gray-500 mt-1">支持手写照片、录音、PDF 讲义，AI 会自动整理成知识卡片</p>
+        </div>
+
+        <!-- 上传类型快捷选择 -->
+        <div class="grid grid-cols-3 gap-3 mb-5">
+          <button onclick="document.getElementById('file-input').click()" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-violet-300 hover:bg-violet-50 transition-all group">
+            <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+              <svg width="20" height="20" fill="none" stroke="#ea580c" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <span class="text-xs font-medium text-gray-700">拍照/截图</span>
+            <span class="text-[10px] text-gray-400">手写笔记、板书、PPT</span>
+          </button>
+          <button onclick="document.getElementById('audio-input').click()" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-violet-300 hover:bg-violet-50 transition-all group" id="audio-upload-btn">
+            <div class="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center group-hover:bg-violet-200 transition-colors">
+              <svg width="20" height="20" fill="none" stroke="#7c3aed" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </div>
+            <span class="text-xs font-medium text-gray-700">上传录音</span>
+            <span class="text-[10px] text-gray-400">培训录音、语音笔记</span>
+          </button>
+          <button onclick="document.getElementById('pdf-input').click()" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-violet-300 hover:bg-violet-50 transition-all group">
+            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+              <svg width="20" height="20" fill="none" stroke="#2563eb" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <span class="text-xs font-medium text-gray-700">PDF 讲义</span>
+            <span class="text-[10px] text-gray-400">课程讲义、参考资料</span>
+          </button>
+        </div>
+        <input type="file" id="file-input" multiple accept="image/*" class="hidden" onchange="handleFiles(this.files)">
+        <input type="file" id="audio-input" multiple accept="audio/*" class="hidden" onchange="handleAudioFiles(this.files)">
+        <input type="file" id="pdf-input" multiple accept=".pdf" class="hidden" onchange="handleFiles(this.files)">
+
+        <div id="file-list" class="space-y-2 mb-4"></div>
+
+        <!-- 录音质量提示（默认隐藏，选了录音后显示） -->
+        <div id="audio-tips" class="hidden mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p class="text-xs font-semibold text-amber-700 mb-1.5">🎙️ 录音效果建议，转录质量更好：</p>
+          <ul class="text-xs text-amber-600 space-y-0.5">
+            <li>· 尽量靠近讲师，手机放在桌面而非口袋</li>
+            <li>· 关闭背景音乐（开着音乐会影响识别准确率）</li>
+            <li>· 支持中英文混杂，含梵文术语可在备注里说明</li>
+            <li>· 单次最长支持 3 小时，超长录音建议分段上传</li>
+          </ul>
+        </div>
+
+        <!-- 文字备注 -->
+        <div class="space-y-4 mb-6">
+          <div>
+            <label class="text-sm font-medium text-gray-700 block mb-1.5">文字备注 <span class="text-gray-400 font-normal">（可选）</span></label>
+            <textarea id="upload-note" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-violet-500 min-h-[80px]" placeholder="补充你的理解、想法，或直接粘贴文字笔记。如有梵文/英文术语可在此说明..."></textarea>
+          </div>
+          <div>
+            <label class="text-sm font-medium text-gray-700 block mb-1.5">来源标注 <span class="text-gray-400 font-normal">（可选）</span></label>
+            <input type="text" id="upload-source" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500" placeholder="例：2025年STOTT普拉提培训·Day2">
+          </div>
+        </div>
+
+        <!-- AI 说明 -->
+        <div class="bg-violet-50 border border-violet-100 rounded-lg p-4 mb-4">
+          <div class="flex items-start gap-3">
+            <div class="w-5 h-5 bg-violet-200 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-violet-700 text-xs font-bold">✦</div>
+            <div class="text-xs text-violet-700 space-y-1">
+              <p class="font-medium">上传后 AI 会自动处理（约5-15分钟），你可以先去做其他事：</p>
+              <ul class="space-y-0.5 text-violet-600">
+                <li>· 识别照片中的文字（含手写）</li>
+                <li>· 录音转文字 + 按话题自动分段</li>
+                <li>· 提炼为知识卡片（标题、要点、注意事项）</li>
+                <li>· 自动打标签、检测与已有笔记的关联</li>
+              </ul>
+              <p class="text-violet-500 pt-0.5">完成后会发站内通知，处理期间可以先浏览共享知识库 →</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 共享贡献提示 -->
+        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-6 flex items-center gap-2">
+          <span class="text-sm">🌱</span>
+          <p class="text-xs text-emerald-700">共享优质内容可获得贡献值，用于兑换高级处理资源与会员权益</p>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="showPage('library')" class="flex-1 border border-gray-200 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">取消</button>
+          <button onclick="fakeUpload()" class="flex-1 bg-violet-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors flex items-center justify-center gap-2" id="upload-btn">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            确认上传
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ AI问答页 ══════════════ -->
+    <div class="page" id="page-aichat">
+      <div class="flex flex-col h-full">
+
+        <!-- 顶部标题 -->
+        <div class="px-6 py-4 border-b border-gray-100 bg-white shrink-0">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 class="text-lg font-bold text-gray-900">AI 问答助手</h1>
+              <p class="text-xs text-gray-400 mt-0.5">基于你的知识库回答备课问题，不足时补充社区内容</p>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full" id="backend-status">
+              <span class="w-1.5 h-1.5 bg-amber-400 rounded-full"></span>检测中...
+            </div>
+          </div>
+        </div>
+
+        <!-- 对话区 -->
+        <div class="flex-1 overflow-auto px-6 py-5 space-y-5" id="chat-messages">
+
+          <!-- 欢迎消息 -->
+          <div class="flex gap-3">
+            <div class="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center shrink-0 mt-0.5 text-white text-xs font-bold">✦</div>
+            <div class="flex-1">
+              <div class="bg-white rounded-2xl rounded-tl-sm border border-gray-100 px-4 py-3 shadow-sm max-w-xl">
+                <p class="text-sm text-gray-700 leading-relaxed">你好，李老师！我已经读完你的 6 条笔记了。</p>
+                <p class="text-sm text-gray-700 leading-relaxed mt-1.5">可以直接问我备课问题，比如：</p>
+                <div class="mt-2 space-y-1.5">
+                  <button onclick="sendPreset('我下节课有个腰椎间盘突出的学员，有什么动作要注意？')" class="w-full text-left text-xs text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-lg px-3 py-2 transition-colors">💬 我下节课有个腰椎间盘突出的学员，有什么动作要注意？</button>
+                  <button onclick="sendPreset('帮我设计一个针对久坐族的60分钟普拉提课程大纲')" class="w-full text-left text-xs text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-lg px-3 py-2 transition-colors">💬 帮我设计一个针对久坐族的60分钟普拉提课程大纲</button>
+                  <button onclick="sendPreset('骨盆中立位我有几种不同的口令，哪个最适合初学者？')" class="w-full text-left text-xs text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-lg px-3 py-2 transition-colors">💬 骨盆中立位我有几种不同的口令，哪个最适合初学者？</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 输入区 -->
+        <div class="px-6 py-4 border-t border-gray-100 bg-white shrink-0">
+          <div class="flex gap-3 items-end">
+            <div class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 focus-within:ring-2 focus-within:ring-violet-300 focus-within:border-violet-300 transition-all bg-white">
+              <textarea id="chat-input" rows="1" class="w-full text-sm text-gray-700 resize-none focus:outline-none placeholder-gray-400 leading-relaxed" placeholder="描述你的备课需求或学员情况..." oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+            </div>
+            <button onclick="sendChat()" class="shrink-0 w-10 h-10 bg-violet-600 hover:bg-violet-700 text-white rounded-xl flex items-center justify-center transition-colors">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+          <p class="text-[10px] text-gray-300 mt-1.5 px-1">Enter 发送 · Shift+Enter 换行</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════ 检索页 ══════════════ -->
+    <div class="page" id="page-search">
+      <div class="p-6 max-w-3xl mx-auto">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 mb-4">检索</h1>
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-input" class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-violet-300" placeholder="搜索关键词或描述，如：髋关节灵活性、久坐族核心..." oninput="doSearch(this.value)">
+          </div>
+          <p class="text-xs text-gray-400 mt-2">支持关键词 + 语义双路搜索，可以用自然语言描述</p>
+        </div>
+
+        <div id="search-empty">
+          <p class="text-sm text-gray-500 font-medium mb-3">热门搜索</p>
+          <div class="flex flex-wrap gap-2">
+            <button class="tag-btn" onclick="quickSearch('髋关节')">髋关节</button>
+            <button class="tag-btn" onclick="quickSearch('骨盆中立位')">骨盆中立位</button>
+            <button class="tag-btn" onclick="quickSearch('脊柱延伸')">脊柱延伸</button>
+            <button class="tag-btn" onclick="quickSearch('核心稳定')">核心稳定</button>
+            <button class="tag-btn" onclick="quickSearch('肩颈放松')">肩颈放松</button>
+            <button class="tag-btn" onclick="quickSearch('普拉提基础')">普拉提基础</button>
+            <button class="tag-btn" onclick="quickSearch('久坐族')">久坐族</button>
+            <button class="tag-btn" onclick="quickSearch('口令技巧')">口令技巧</button>
+          </div>
+        </div>
+
+        <div id="search-results" class="hidden">
+          <p class="text-sm text-gray-500 mb-4" id="search-count"></p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="search-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ 共享知识库 ══════════════ -->
+    <div class="page" id="page-shared">
+      <div class="p-6 max-w-3xl mx-auto">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 mb-1">共享知识库</h1>
+          <p class="text-sm text-gray-500">来自同行老师的优质笔记</p>
+        </div>
+
+        <div class="relative mb-4">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-violet-500" placeholder="搜索笔记标题、内容或标签...">
+        </div>
+
+        <div class="flex gap-1.5 flex-wrap mb-5">
+          <button class="tag-btn">髋关节</button>
+          <button class="tag-btn">核心稳定</button>
+          <button class="tag-btn">呼吸</button>
+          <button class="tag-btn">脊柱</button>
+          <button class="tag-btn">肩颈</button>
+          <button class="tag-btn">特殊人群</button>
+        </div>
+
+        <p class="text-sm text-gray-500 mb-4">6 条笔记</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <!-- 共享卡片1 -->
+          <div class="card">
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 leading-tight flex-1">呼吸与核心激活的关系——从解剖学出发</h3>
+              <button class="shrink-0 p-1 text-violet-600 hover:text-violet-700" title="已收藏">
+                <svg width="17" height="17" fill="currentColor" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              </button>
+            </div>
+            <ul class="space-y-1 mb-3">
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>横膈膜下降时腹腔内压升高，自然激活腹横肌</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>不要主动"收腹"，用呼气引导核心激活更自然</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>吸气时允许腹部轻微外扩，是正常的解剖运动</li>
+            </ul>
+            <div class="flex gap-1.5 mb-3">
+              <span class="badge bg-violet-100 text-violet-700">核心稳定</span>
+              <span class="badge bg-gray-100 text-gray-600">呼吸</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-gray-400">
+              <span>Lily老师</span>
+              <span class="flex items-center gap-2">
+                <span class="flex items-center gap-1"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>47</span>
+                2025年1月
+              </span>
+            </div>
+          </div>
+
+          <!-- 共享卡片2 -->
+          <div class="card">
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 leading-tight flex-1">髋关节外旋肌群的功能训练思路</h3>
+              <button class="shrink-0 p-1 text-gray-400 hover:text-violet-600" title="收藏">
+                <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              </button>
+            </div>
+            <ul class="space-y-1 mb-3">
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>梨状肌综合征与深层六块外旋肌的区分诊断</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>蛤蜊式变体：侧卧骨盆稳定，只旋转股骨</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>站姿外旋抗阻练习比躺姿更接近日常功能模式</li>
+            </ul>
+            <div class="flex gap-1.5 mb-3">
+              <span class="badge bg-violet-100 text-violet-700">髋关节</span>
+              <span class="badge bg-gray-100 text-gray-600">功能训练</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-gray-400">
+              <span>Amanda老师</span>
+              <span class="flex items-center gap-2"><span>🔖 32</span>2025年2月</span>
+            </div>
+          </div>
+
+          <!-- 共享卡片3 -->
+          <div class="card">
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 leading-tight flex-1">产后妈妈的核心恢复分阶段方案</h3>
+              <button class="shrink-0 p-1 text-gray-400 hover:text-violet-600">
+                <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              </button>
+            </div>
+            <ul class="space-y-1 mb-3">
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>第一阶段（产后6周内）：呼吸激活、盆底感知</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>第二阶段：死虫式、桥式等低负荷动作</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>腹直肌分离超过2指宽，避免卷腹类动作</li>
+            </ul>
+            <div class="flex gap-1.5 mb-3">
+              <span class="badge bg-violet-100 text-violet-700">特殊人群</span>
+              <span class="badge bg-gray-100 text-gray-600">核心稳定</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-gray-400">
+              <span>Sophie老师</span>
+              <span class="flex items-center gap-2"><span>🔖 89</span>2025年1月</span>
+            </div>
+          </div>
+
+          <!-- 共享卡片4 -->
+          <div class="card">
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 leading-tight flex-1">初学者普拉提课堂的前10分钟设计</h3>
+              <button class="shrink-0 p-1 text-violet-600">
+                <svg width="17" height="17" fill="currentColor" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              </button>
+            </div>
+            <ul class="space-y-1 mb-3">
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>先建立身体意识：骨盆中立、脊柱延伸、肩胛骨位置</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>用镜像口令（"你的右边"而非"我的右边"）</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>第一节课不讲术语，用身体感受描述代替解剖名词</li>
+            </ul>
+            <div class="flex gap-1.5 mb-3">
+              <span class="badge bg-violet-100 text-violet-700">初级</span>
+              <span class="badge bg-gray-100 text-gray-600">教学法</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-gray-400">
+              <span>Grace老师</span>
+              <span class="flex items-center gap-2"><span>🔖 115</span>2025年2月</span>
+            </div>
+          </div>
+
+          <!-- 共享卡片5 -->
+          <div class="card">
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 leading-tight flex-1">肩袖损伤学员的瑜伽动作调整指南</h3>
+              <button class="shrink-0 p-1 text-gray-400 hover:text-violet-600">
+                <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              </button>
+            </div>
+            <ul class="space-y-1 mb-3">
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>下犬式：曲肘替代（海豚式），减少肩关节外旋压力</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>战士一：前臂平行替代手臂上举</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>绝对避免：鳄鱼式、四柱支撑对肩袖的剪切力极大</li>
+            </ul>
+            <div class="flex gap-1.5 mb-3">
+              <span class="badge bg-violet-100 text-violet-700">肩颈</span>
+              <span class="badge bg-gray-100 text-gray-600">特殊人群</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-gray-400">
+              <span>Rachel老师</span>
+              <span class="flex items-center gap-2"><span>🔖 73</span>2025年3月</span>
+            </div>
+          </div>
+
+          <!-- 共享卡片6 -->
+          <div class="card">
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <h3 class="text-sm font-semibold text-gray-900 leading-tight flex-1">胸椎灵活性训练的5个核心动作</h3>
+              <button class="shrink-0 p-1 text-gray-400 hover:text-violet-600">
+                <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              </button>
+            </div>
+            <ul class="space-y-1 mb-3">
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>泡沫轴胸椎延伸：专注T4-T8节段，避免过度伸展腰椎</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>坐姿胸椎旋转：双手交叉抱肩，绕固定腰椎旋转</li>
+              <li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>猫牛式的上半段变体：专注胸椎，骨盆不动</li>
+            </ul>
+            <div class="flex gap-1.5 mb-3">
+              <span class="badge bg-violet-100 text-violet-700">脊柱</span>
+              <span class="badge bg-gray-100 text-gray-600">灵活性</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-gray-400">
+              <span>Kevin老师</span>
+              <span class="flex items-center gap-2"><span>🔖 61</span>2025年3月</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ 订阅页 ══════════════ -->
+    <div class="page" id="page-subscribe">
+      <div class="p-6 max-w-3xl mx-auto">
+        <div class="text-center mb-8">
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">订阅与权益</h1>
+          <p class="text-sm text-gray-500">知识库已包含在瑜伽AI矩阵整体订阅中</p>
+        </div>
+
+        <!-- 权益说明卡 -->
+        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 mb-6">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center shrink-0 text-emerald-600 text-base">🧘</div>
+            <div>
+              <h3 class="font-semibold text-gray-900 mb-1.5">知识库已包含在瑜伽AI矩阵订阅中</h3>
+              <p class="text-sm text-gray-600 leading-relaxed">本模块不单独收费。免费版可体验基础能力；专业版可获得知识库日常使用不限。长音频转写、深度整理、批量入库、高级OCR等高成本处理能力，可通过贡献值或资源包获得。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 三档方案 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div class="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col">
+            <div class="mb-4">
+              <h3 class="font-semibold text-gray-900">免费版</h3>
+              <div class="mt-1 flex items-baseline gap-1"><span class="text-3xl font-bold">¥0</span><span class="text-gray-400 text-sm">/永久</span></div>
+            </div>
+            <ul class="space-y-2 flex-1 mb-5 text-sm">
+              <li class="flex items-start gap-2 text-gray-700"><span class="text-green-500 mt-0.5">✓</span>知识库基础使用</li>
+              <li class="flex items-start gap-2 text-gray-700"><span class="text-green-500 mt-0.5">✓</span>每月20次 AI 处理</li>
+              <li class="flex items-start gap-2 text-gray-700"><span class="text-green-500 mt-0.5">✓</span>拍照、文字、PDF上传</li>
+              <li class="flex items-start gap-2 text-gray-400"><span class="mt-0.5">×</span>共享知识库</li>
+              <li class="flex items-start gap-2 text-gray-400"><span class="mt-0.5">×</span>语义搜索</li>
+            </ul>
+            <button class="w-full border border-gray-200 text-gray-500 px-4 py-2.5 rounded-lg text-sm font-medium cursor-default">当前方案</button>
+          </div>
+
+          <div class="rounded-2xl border-2 border-emerald-500 bg-gradient-to-b from-emerald-50 to-white p-5 flex flex-col shadow-lg shadow-emerald-100" style="position:relative">
+            <span style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);white-space:nowrap" class="text-xs bg-emerald-600 text-white px-3 py-0.5 rounded-full font-medium">推荐</span>
+            <div class="mb-4">
+              <h3 class="font-semibold text-gray-900">专业版</h3>
+              <div class="mt-1 flex items-baseline gap-1"><span class="text-3xl font-bold">¥29</span><span class="text-gray-400 text-sm">/月</span></div>
+            </div>
+            <ul class="space-y-2 flex-1 mb-5 text-sm">
+              <li class="flex items-start gap-2 text-gray-700"><span class="text-green-500 mt-0.5">✓</span>知识库日常使用不限</li>
+              <li class="flex items-start gap-2 text-gray-700"><span class="text-green-500 mt-0.5">✓</span>关键词 + 语义混合检索</li>
+              <li class="flex items-start gap-2 text-gray-700"><span class="text-green-500 mt-0.5">✓</span>浏览共享知识库</li>
+              <li class="flex items-start gap-2 text-gray-700"><span class="text-green-500 mt-0.5">✓</span>音频最长2小时</li>
+              <li class="flex items-start gap-2 text-amber-600 text-xs"><span class="mt-0.5">✦</span>高级处理资源可通过贡献值或资源包获取</li>
+            </ul>
+            <button class="w-full bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors">立即订阅</button>
+          </div>
+
+          <div class="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col">
+            <div class="mb-4">
+              <h3 class="font-semibold text-gray-900">专业版·年付</h3>
+              <div class="mt-1 flex items-baseline gap-1"><span class="text-3xl font-bold">¥199</span><span class="text-gray-400 text-sm">/年</span></div>
+              <p class="text-xs text-gray-400 mt-1">月均仅 ¥16.6，省 ¥149</p>
+            </div>
+            <ul class="space-y-2 flex-1 mb-5 text-sm">
+              <li class="flex items-start gap-2 text-gray-500 text-xs">包含专业版全部功能</li>
+              <li class="flex items-start gap-2 text-gray-700"><span class="text-green-500 mt-0.5">✓</span>知识库日常使用不限</li>
+              <li class="flex items-start gap-2 text-gray-700"><span class="text-green-500 mt-0.5">✓</span>完整历史记录</li>
+              <li class="flex items-start gap-2 text-gray-700"><span class="text-green-500 mt-0.5">✓</span>数据导出（PDF/Markdown）</li>
+              <li class="flex items-start gap-2 text-amber-600 text-xs"><span class="mt-0.5">✦</span>高级处理资源可通过贡献值或资源包获取</li>
+            </ul>
+            <button class="w-full border border-emerald-300 text-emerald-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-emerald-50 transition-colors">年付立省 ¥149</button>
+          </div>
+        </div>
+
+        <!-- 共享贡献计划 -->
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+          <div class="text-center mb-6">
+            <h2 class="text-lg font-bold text-gray-900 mb-1">共享贡献计划</h2>
+            <p class="text-sm text-gray-500">上传优质笔记和知识内容，帮助更多老师，也为自己兑换更高价值权益。</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white rounded-xl border border-gray-100 p-4">
+              <div class="text-xl mb-2">🌱</div>
+              <h4 class="text-sm font-semibold text-gray-900 mb-2">如何获得贡献值</h4>
+              <ul class="space-y-1.5 text-xs text-gray-600">
+                <li class="flex items-center gap-1.5"><span class="text-green-500">✓</span>内容通过审核</li>
+                <li class="flex items-center gap-1.5"><span class="text-green-500">✓</span>被用户收藏</li>
+                <li class="flex items-center gap-1.5"><span class="text-green-500">✓</span>被搜索/问答结果引用</li>
+                <li class="flex items-center gap-1.5"><span class="text-green-500">✓</span>入选精选内容</li>
+              </ul>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-100 p-4">
+              <div class="text-xl mb-2">🎁</div>
+              <h4 class="text-sm font-semibold text-gray-900 mb-2">贡献值可兑换什么</h4>
+              <ul class="space-y-1.5 text-xs text-gray-600">
+                <li class="flex items-center gap-1.5"><span class="text-green-500">✓</span>长音频转写时长</li>
+                <li class="flex items-center gap-1.5"><span class="text-green-500">✓</span>深度整理次数</li>
+                <li class="flex items-center gap-1.5"><span class="text-green-500">✓</span>批量入库资源</li>
+                <li class="flex items-center gap-1.5"><span class="text-green-500">✓</span>高级OCR处理</li>
+              </ul>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-100 p-4">
+              <div class="text-xl mb-2">⭐</div>
+              <h4 class="text-sm font-semibold text-gray-900 mb-2">优质贡献者额外权益</h4>
+              <ul class="space-y-1.5 text-xs text-gray-600">
+                <li class="flex items-center gap-1.5"><span class="text-green-500">✓</span>优质贡献者标识</li>
+                <li class="flex items-center gap-1.5"><span class="text-green-500">✓</span>精选内容曝光</li>
+                <li class="flex items-center gap-1.5"><span class="text-green-500">✓</span>会员权益/续费券</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-center text-xs text-gray-400 mt-6">订阅随时可取消 · 如有问题请联系客服</p>
+      </div>
+    </div>
+
+    <!-- ══════════════ 个人主页 ══════════════ -->
+    <div class="page" id="page-profile">
+      <div class="p-6 max-w-lg mx-auto">
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">我的</h1>
+        <div class="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-5 text-white mb-5">
+          <div class="flex items-center gap-4 mb-5">
+            <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold">李</div>
+            <div>
+              <h2 class="font-semibold text-lg">李老师</h2>
+              <span class="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">专业版</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="text-center">
+              <p class="text-2xl font-bold">280</p>
+              <p class="text-xs text-white/70 mt-0.5">积分余额</p>
+            </div>
+            <div class="w-px h-10 bg-white/20"></div>
+            <div class="text-center">
+              <p class="text-xs text-white/70">每次共享笔记</p>
+              <p class="text-sm font-medium">+10 积分</p>
+            </div>
+            <div class="w-px h-10 bg-white/20"></div>
+            <div class="text-center">
+              <p class="text-xs text-white/70">笔记被收藏</p>
+              <p class="text-sm font-medium">+5 积分</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50 mb-5">
+          <button onclick="showPage('library')" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors text-left">
+            <div class="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="#7c3aed" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-800">我的知识库</p>
+              <p class="text-xs text-gray-400">管理和查看所有笔记</p>
+            </div>
+            <svg width="16" height="16" fill="none" stroke="#d1d5db" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors text-left">
+            <div class="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="#7c3aed" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/></svg>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-800">我的贡献</p>
+              <p class="text-xs text-gray-400">已共享 3 条，被收藏 56 次</p>
+            </div>
+            <svg width="16" height="16" fill="none" stroke="#d1d5db" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors text-left">
+            <div class="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="#7c3aed" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-800">积分记录</p>
+              <p class="text-xs text-gray-400">查看积分流水</p>
+            </div>
+            <svg width="16" height="16" fill="none" stroke="#d1d5db" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-100 p-4 mb-5">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-gray-700">当前订阅</span>
+            <span class="badge bg-emerald-100 text-emerald-700">专业版</span>
+          </div>
+          <p class="text-xs text-gray-400">到期时间：2026年5月7日</p>
+        </div>
+
+        <button class="w-full flex items-center justify-center gap-2 py-3 text-sm text-red-400 hover:text-red-500 transition-colors">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          退出登录
+        </button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- 卡片详情弹窗 -->
+<div class="modal items-center justify-center p-4" id="detail-modal">
+  <div class="modal-overlay" onclick="closeDetail()"></div>
+  <div class="modal-content bg-white rounded-2xl w-full max-w-xl p-6" id="detail-content"></div>
+</div>
+
+<!-- 上传成功提示 -->
+<div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-full hidden z-50 shadow-lg transition-all"></div>
+
+<script>
+// ── 后端配置 ──
+const API_BASE = 'http://localhost:5000'
+let BACKEND_READY = false
+
+async function checkBackend() {
+  try {
+    const resp = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(3000) })
+    if (resp.ok) {
+      BACKEND_READY = true
+      const data = await resp.json()
+      updateBackendStatus(true, data.card_count)
+      return true
+    }
+  } catch (_) {}
+  BACKEND_READY = false
+  updateBackendStatus(false)
+  return false
+}
+
+function updateBackendStatus(ready, cardCount) {
+  const el = document.getElementById('backend-status')
+  if (!el) return
+  if (ready) {
+    el.innerHTML = `<span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>RAG已连接 · ${cardCount}条已索引`
+    el.className = 'flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-3 py-1.5 rounded-full'
+  } else {
+    el.innerHTML = `<span class="w-1.5 h-1.5 bg-amber-400 rounded-full"></span>后端未连接 · 仅关键词模式`
+    el.className = 'flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full'
+  }
+}
+
+async function initBackend() {
+  const ready = await checkBackend()
+  if (!ready) {
+    renderLibrary()
+    return
+  }
+  const store = loadLocalCards()
+  if (!store || store.length === 0) {
+    saveLocalCards(DETAILS)
+  }
+  const cardsToIndex = loadLocalCards()
+  if (cardsToIndex.length === 0) return
+  try {
+    await fetch(`${API_BASE}/api/init-embeddings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cards: cardsToIndex })
+    })
+    console.log('向量索引初始化完成')
+  } catch (e) {
+    console.error('向量索引初始化失败:', e)
+  }
+  renderLibrary()
+}
+
+function loadLocalCards() {
+  const saved = localStorage.getItem('kb_cards')
+  if (saved) {
+    try { return JSON.parse(saved) } catch (_) {}
+  }
+  return DETAILS
+}
+
+function saveLocalCards(cards) {
+  localStorage.setItem('kb_cards', JSON.stringify(cards))
+}
+
+let _pendingImgFiles = []
+
+const DETAILS = [
+  {
+    title: '骨盆中立位的三种口令对比',
+    keyPoints: ['想象坐骨指向地面，尾骨自然下垂', '肚脐轻轻向内收，腰椎和垫子之间留一张纸的空间', '避免用"收腹"的口令，容易引发屏气'],
+    targetAudience: '初级学员建立体感时',
+    cautions: '腰椎过度前凸者需额外提示',
+    source: '2024年BASI培训·Day1',
+    tags: ['骨盆', '口令技巧', '初级'],
+    isPublic: true,
+    notes: '我在实际教学中发现，用"想象尾骨像一条狗的尾巴轻轻垂下"这个比喻对初学者效果最好。',
+    related: ['髋屈肌紧张的评估与改善方案', 'Hundred 动作的常见错误与纠正']
+  },
+  {
+    title: '髋屈肌紧张的评估与改善方案',
+    keyPoints: ['Thomas Test 评估：仰卧屈膝，观察另一侧腿是否自然下垂', '髂腰肌拉伸：弓步式保持骨盆中立，前移重心而非塌腰', '久坐族优先处理：股直肌与髂腰肌分开拉伸效果更佳'],
+    targetAudience: '久坐族、有下背痛困扰的学员',
+    cautions: '急性腰椎间盘突出禁用',
+    source: '2025年STOTT培训·Day2',
+    tags: ['髋关节', '久坐族', '脊柱'],
+    isPublic: false,
+    notes: '',
+    related: ['骨盆中立位的三种口令对比', '肩颈放松序列（久坐族课前热身）']
+  },
+  {
+    title: 'Hundred 动作的常见错误与纠正',
+    keyPoints: ['颈部代偿：确认学员从胸椎屈曲而非颈椎发力', '腿的高度：初级可弯曲膝关节或提高腿的高度降低难度', '呼吸节奏：5次吸气5次呼气，配合手臂泵击'],
+    targetAudience: '有一定基础的学员',
+    cautions: '颈椎有问题者可枕头支撑或完全躺平',
+    source: '个人教学总结',
+    tags: ['普拉提基础', '核心稳定', '口令技巧'],
+    isPublic: true,
+    notes: '',
+    related: ['Roll Up 系列的进阶与退阶方案']
+  },
+  {
+    title: '脊柱侧弯学员的普拉提动作改良',
+    keyPoints: ['C型侧弯与S型侧弯的处理方式完全不同', 'C型：侧向拉伸凹侧，强化凸侧肌肉', '所有旋转动作需根据侧弯方向调整幅度', '优先建立对称性意识而非追求动作幅度'],
+    targetAudience: '有脊柱侧弯的学员（需先了解侧弯类型）',
+    cautions: '严重侧弯（Cobb角>40°）建议配合康复科医师',
+    source: '2025年BASI进阶培训·特殊人群模块',
+    tags: ['脊柱', '特殊人群', '改良动作'],
+    isPublic: false,
+    notes: '',
+    related: ['骨盆中立位的三种口令对比']
+  },
+  {
+    title: '肩颈放松序列（久坐族课前热身）',
+    keyPoints: ['颈部侧屈：耳朵向肩膀，对侧手轻压膝盖增加拉伸感', '肩胛骨绕圈：尽量慢，感受肩胛骨在背部的运动轨迹', '胸椎旋转：双臂展开，旋转时视线跟随指尖'],
+    targetAudience: '久坐族学员（课前5-8分钟）',
+    cautions: null,
+    source: '2024年阴瑜伽工作坊',
+    tags: ['肩颈', '热身', '久坐族'],
+    isPublic: true,
+    notes: '这个序列我基本上每节课都用，学员反馈很好。',
+    related: ['髋屈肌紧张的评估与改善方案']
+  },
+  {
+    title: 'Roll Up 系列的进阶与退阶方案',
+    keyPoints: ['退阶：弯曲膝盖、脚踩墙壁、用毛巾辅助', '进阶：双腿并拢伸直、减慢速度、末端停留', '关键：是脊柱节节展开，不是用惯性冲起来'],
+    targetAudience: '所有水平学员（根据级别选择版本）',
+    cautions: '骨质疏松患者避免过度屈曲脊柱',
+    source: '个人教学总结',
+    tags: ['普拉提基础', '脊柱', '进退阶'],
+    isPublic: false,
+    notes: '',
+    related: ['Hundred 动作的常见错误与纠正']
+  }
+]
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
+  document.getElementById('page-' + name).classList.add('active')
+  const nav = document.getElementById('nav-' + name)
+  if (nav) nav.classList.add('active')
+}
+
+let currentView = 'card'
+let selectedTags = []
+const CARD_DATES = ['2024年11月','2025年1月','2025年2月','2025年3月','2025年3月','2025年4月']
+const CARD_PROCESSING = [false, false, false, false, false, true]
+
+function switchView(mode, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  currentView = mode
+  renderLibrary()
+}
+
+function toggleTag(btn, tag) {
+  btn.classList.toggle('selected')
+  if (selectedTags.includes(tag)) {
+    selectedTags = selectedTags.filter(t => t !== tag)
+  } else {
+    selectedTags.push(tag)
+  }
+  renderLibrary()
+}
+
+function makeCardHTML(d) {
+  const processing = CARD_PROCESSING[d.idx]
+  const shareBtn = d.isPublic
+    ? `<button onclick="event.stopPropagation()" title="已共享" class="p-1.5 rounded-md hover:bg-gray-100 text-green-500"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`
+    : `<button onclick="event.stopPropagation()" class="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-violet-600"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>`
+  const delBtn = `<button onclick="event.stopPropagation()" class="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-red-500"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`
+  const processingBadge = processing ? `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full mr-1 bg-violet-100 text-violet-600"><span class="processing-dot" style="width:5px;height:5px"></span>AI 整理中</span>` : ''
+  const caution = d.cautions ? `<p class="text-xs text-amber-600 bg-amber-50 rounded-md px-2.5 py-1.5 mb-3">⚠️ ${d.cautions}</p>` : ''
+  const extra = d.keyPoints.length > 3 ? `<li class="text-xs text-gray-400 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>+${d.keyPoints.length - 3} 条更多</li>` : ''
+  return `
+    <div class="card group cursor-pointer ${processing ? 'opacity-75' : ''}" onclick="openDetail(${d.idx})">
+      <div class="flex items-start justify-between gap-2 mb-3">
+        <h3 class="text-sm font-semibold text-gray-900 leading-tight flex-1">${processingBadge}${d.title}</h3>
+        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">${shareBtn}${delBtn}</div>
+      </div>
+      <ul class="space-y-1 mb-3">
+        ${d.keyPoints.slice(0,3).map(p=>`<li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>${p}</li>`).join('')}${extra}
+      </ul>
+      ${caution}
+      <div class="flex items-center justify-between">
+        <div class="flex gap-1.5 flex-wrap">
+          ${d.tags.slice(0,3).map((t,i)=>`<span class="badge ${i===0?'bg-violet-100 text-violet-700':'bg-gray-100 text-gray-600'}">${t}</span>`).join('')}
+        </div>
+        <span class="text-xs text-gray-400">${CARD_DATES[d.idx]}</span>
+      </div>
+    </div>`
+}
+
+function renderLibrary() {
+  const allCards = loadLocalCards()
+  const all = allCards.map((d,i) => ({...d, idx:i}))
+  const filtered = selectedTags.length === 0 ? all : all.filter(d => selectedTags.some(t => d.tags && d.tags.includes(t)))
+  const el = document.getElementById('library-container')
+  if (currentView === 'card') renderCardView(el, filtered)
+  else if (currentView === 'timeline') renderTimelineView(el, filtered)
+  else renderTagView(el, filtered)
+}
+
+function empty(el) {
+  el.className = ''
+  el.innerHTML = '<div class="text-center py-16 text-gray-400 text-sm">没有符合筛选条件的笔记</div>'
+}
+
+function renderCardView(el, cards) {
+  if (!cards.length) { empty(el); return }
+  el.className = 'grid grid-cols-1 md:grid-cols-2 gap-4'
+  el.innerHTML = cards.map(d => makeCardHTML(d)).join('')
+}
+
+function renderTimelineView(el, cards) {
+  if (!cards.length) { empty(el); return }
+  el.className = 'space-y-8'
+  const groups = {}
+  cards.forEach(d => {
+    const k = CARD_DATES[d.idx]
+    if (!groups[k]) groups[k] = []
+    groups[k].push(d)
+  })
+  const sorted = Object.keys(groups).sort((a,b) => {
+    const n = s => { const m = s.match(/(\d+)年(\d+)月/); return m ? +m[1]*100 + +m[2] : 0 }
+    return n(b) - n(a)
+  })
+  el.innerHTML = sorted.map(date => `
+    <div>
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-2 h-2 bg-violet-400 rounded-full shrink-0"></div>
+        <span class="text-sm font-semibold text-gray-500">${date}</span>
+        <div class="flex-1 h-px bg-gray-100"></div>
+      </div>
+      <div class="pl-5 space-y-3">
+        ${groups[date].map(d => `
+          <div class="card cursor-pointer hover:shadow-md transition-shadow" onclick="openDetail(${d.idx})">
+            <div class="flex items-start justify-between gap-2 mb-1.5">
+              <h3 class="text-sm font-semibold text-gray-900 flex-1">${d.title}</h3>
+              ${d.isPublic ? '<span class="text-xs text-green-500 shrink-0">已共享</span>' : '<span class="text-xs text-gray-300 shrink-0">私密</span>'}
+            </div>
+            <p class="text-xs text-gray-500 mb-2 line-clamp-1">${d.keyPoints[0]}</p>
+            <div class="flex gap-1.5 flex-wrap">
+              ${d.tags.map((t,i)=>`<span class="badge ${i===0?'bg-violet-100 text-violet-700':'bg-gray-100 text-gray-600'}">${t}</span>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('')
+}
+
+function renderTagView(el, cards) {
+  if (!cards.length) { empty(el); return }
+  el.className = 'space-y-7'
+  const groups = {}
+  cards.forEach(d => {
+    d.tags.forEach(tag => {
+      if (!groups[tag]) groups[tag] = []
+      if (!groups[tag].find(x => x.idx === d.idx)) groups[tag].push(d)
+    })
+  })
+  const sorted = Object.keys(groups).sort((a,b) => groups[b].length - groups[a].length)
+  const tagIcon = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`
+  el.innerHTML = sorted.map(tag => `
+    <div>
+      <div class="flex items-center gap-2 mb-3">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-semibold">${tagIcon} ${tag}</span>
+        <span class="text-xs text-gray-400">${groups[tag].length} 条</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pl-1">
+        ${groups[tag].map(d => `
+          <div class="card cursor-pointer hover:shadow-md transition-shadow" onclick="openDetail(${d.idx})">
+            <h3 class="text-sm font-semibold text-gray-900 mb-1.5">${d.title}</h3>
+            <p class="text-xs text-gray-500 line-clamp-2 mb-2">${d.keyPoints[0]}</p>
+            <div class="flex gap-1 flex-wrap">
+              ${d.tags.filter(t=>t!==tag).map(t=>`<span class="badge bg-gray-100 text-gray-500">${t}</span>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('')
+}
+
+function openDetail(idx) {
+  const cards = loadLocalCards()
+  const d = cards[idx]
+  if (!d) return
+  const html = `
+    <button onclick="closeDetail()" class="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 mb-5">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg> 返回
+    </button>
+    <div class="flex items-start justify-between gap-3 mb-4">
+      <h2 class="text-xl font-bold text-gray-900">${d.title}</h2>
+      <button class="shrink-0 flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border ${d.isPublic ? 'border-green-200 text-green-600 bg-green-50' : 'border-gray-200 text-gray-500'}">
+        ${d.isPublic ? '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> 已共享' : '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 私密'}
+      </button>
+    </div>
+    <div class="flex gap-1.5 flex-wrap mb-4">
+      ${d.tags.map(t => `<span class="badge bg-violet-100 text-violet-700">${t}</span>`).join('')}
+      ${d.source ? `<span class="text-xs text-gray-400 ml-auto flex items-center gap-1"><span class="w-1.5 h-1.5 bg-violet-400 rounded-full inline-block"></span>${d.source}</span>` : ''}
+    </div>
+    <div class="bg-gray-50 rounded-xl p-4 mb-3">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">核心要点</p>
+      <ol class="space-y-2">
+        ${d.keyPoints.map((p, i) => `<li class="text-sm text-gray-700 flex items-start gap-2"><span class="text-violet-500 font-bold shrink-0">${i+1}.</span>${p}</li>`).join('')}
+      </ol>
+    </div>
+    ${d.targetAudience ? `<div class="bg-blue-50 rounded-xl p-4 mb-3"><p class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">适用人群</p><p class="text-sm text-blue-700">${d.targetAudience}</p></div>` : ''}
+    ${d.cautions ? `<div class="bg-amber-50 rounded-xl p-4 mb-3"><p class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-1">⚠️ 注意事项</p><p class="text-sm text-amber-700">${d.cautions}</p></div>` : ''}
+    <div class="border border-dashed border-gray-200 rounded-xl p-4 mb-4">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">我的注解</p>
+      <p class="text-sm text-gray-600">${d.notes || '<span class="text-gray-300">点击编辑添加注解...</span>'}</p>
+    </div>
+    ${d.related.length ? `<div><p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">相关笔记</p><div class="space-y-2">${d.related.map(r => `<button onclick="jumpToRelated('${r.replace(/'/g, "\\'")}')" class="w-full text-left px-3 py-2.5 bg-gray-50 hover:bg-violet-50 rounded-lg text-sm text-gray-700 hover:text-violet-700 transition-colors flex items-center gap-2"><svg width="14" height="14" fill="none" stroke="#9ca3af" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>${r}</button>`).join('')}</div></div>` : ''}
+  `
+  document.getElementById('detail-content').innerHTML = html
+  document.getElementById('detail-modal').classList.add('open')
+}
+
+function closeDetail() {
+  document.getElementById('detail-modal').classList.remove('open')
+}
+
+function jumpToRelated(title) {
+  const cards = loadLocalCards()
+  const idx = cards.findIndex(c => c.title === title)
+  if (idx >= 0) {
+    closeDetail()
+    setTimeout(() => openDetail(idx), 200)
+  }
+}
+
+// ── 混合检索（语义+关键词） ──
+let _searchTimer = null
+
+async function doSearch(q) {
+  if (!q.trim()) {
+    document.getElementById('search-empty').classList.remove('hidden')
+    document.getElementById('search-results').classList.add('hidden')
+    return
+  }
+  document.getElementById('search-empty').classList.add('hidden')
+  document.getElementById('search-results').classList.remove('hidden')
+
+  if (BACKEND_READY) {
+    clearTimeout(_searchTimer)
+    _searchTimer = setTimeout(async () => {
+      try {
+        const resp = await fetch(`${API_BASE}/api/search`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q, top_k: 10 })
+        })
+        const data = await resp.json()
+        renderSearchResults(data.results, data.mode)
+      } catch (e) {
+        doKeywordSearch(q)
+      }
+    }, 300)
+  } else {
+    doKeywordSearch(q)
+  }
+}
+
+function doKeywordSearch(q) {
+  const cards = loadLocalCards()
+  const results = cards.map((d, i) => ({ ...d, id: i }))
+    .filter(d => (d.title && d.title.includes(q)) || (d.tags && d.tags.some(t => t.includes(q))) || (d.keyPoints && d.keyPoints.some(p => p.includes(q))))
+  renderSearchResults(results, 'keyword')
+}
+
+function renderSearchResults(results, mode) {
+  const modeLabel = mode === 'hybrid' ? '混合检索' : mode === 'semantic' ? '语义检索' : '关键词检索'
+  document.getElementById('search-count').innerHTML = `找到 ${results.length} 条结果 <span class="text-xs text-gray-300 ml-2">${modeLabel}</span>`
+  document.getElementById('search-grid').innerHTML = results.map(d => {
+    const scoreBadge = d.score ? `<span class="text-[10px] text-violet-400 ml-1">${Math.round(d.score * 100)}%</span>` : ''
+    return `
+    <div class="card cursor-pointer" onclick="openDetail(${d.id})">
+      <h3 class="text-sm font-semibold text-gray-900 mb-2">${d.title}${scoreBadge}</h3>
+      <ul class="space-y-1 mb-3">${(d.keyPoints||[]).slice(0,2).map(p => `<li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>${p}</li>`).join('')}</ul>
+      <div class="flex gap-1.5">${(d.tags||[]).map(t => `<span class="badge bg-violet-100 text-violet-700">${t}</span>`).join('')}</div>
+    </div>`
+  }).join('') || '<div class="text-center py-12 text-gray-400 text-sm col-span-2">未找到相关结果</div>'
+}
+
+function quickSearch(q) {
+  document.getElementById('search-input').value = q
+  doSearch(q)
+}
+
+function handleFiles(files) {
+  const list = document.getElementById('file-list')
+  list.innerHTML = ''
+  _pendingImgFiles = []
+  Array.from(files).forEach(f => {
+    const isImg = f.type.startsWith('image')
+    const type = isImg ? '📷 照片' : f.type.startsWith('audio') ? '🎙️ 录音' : '📄 PDF'
+    const size = (f.size / 1024 / 1024).toFixed(1)
+    if (isImg) _pendingImgFiles.push(f)
+    list.innerHTML += `<div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"><div class="flex-1"><p class="text-sm font-medium text-gray-700">${f.name}</p><p class="text-xs text-gray-400">${type} · ${size} MB${isImg ? ' · AI 将自动识别文字' : ''}</p></div></div>`
+  })
+}
+
+function handleAudioFiles(files) {
+  const list = document.getElementById('file-list')
+  list.innerHTML = ''
+  document.getElementById('audio-tips').classList.remove('hidden')
+  Array.from(files).forEach(f => {
+    const size = (f.size / 1024 / 1024).toFixed(1)
+    list.innerHTML += `<div class="flex items-center gap-3 p-3 bg-violet-50 border border-violet-100 rounded-lg">
+      <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center shrink-0">
+        <svg width="15" height="15" fill="none" stroke="#7c3aed" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+      </div>
+      <div class="flex-1">
+        <p class="text-sm font-medium text-gray-700">${f.name}</p>
+        <p class="text-xs text-gray-400">🎙️ 录音 · ${size} MB · AI 将自动转录并按话题分段</p>
+      </div>
+    </div>`
+  })
+}
+
+async function _imgToB64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader()
+    r.onload = () => res(r.result.split(',')[1])
+    r.onerror = rej
+    r.readAsDataURL(file)
+  })
+}
+
+let _pendingCards = []
+
+async function fakeUpload() {
+  const btn = document.getElementById('upload-btn')
+  const noteText = document.getElementById('upload-note')?.value?.trim() || ''
+  const sourceText = document.getElementById('upload-source')?.value?.trim() || '用户上传'
+
+  if (!BACKEND_READY) {
+    showToast('⚠ 后端未连接，无法处理上传。请先启动 server.py')
+    return
+  }
+
+  if (_pendingImgFiles.length === 0 && !noteText) {
+    showToast('请先选择文件或输入文字备注')
+    return
+  }
+
+  btn.disabled = true
+  _pendingCards = []
+
+  if (noteText && _pendingImgFiles.length === 0) {
+    btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid white;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></div> AI提炼中...'
+    const safeId = 'txt_' + Math.random().toString(36).slice(2)
+    const placeholder = document.createElement('div')
+    placeholder.id = safeId
+    placeholder.className = 'mt-2 p-3 bg-violet-50 border border-violet-100 rounded-lg'
+    placeholder.innerHTML = `<p class="text-xs text-violet-500">⏳ AI正在提炼知识卡片...</p>`
+    document.getElementById('file-list').appendChild(placeholder)
+
+    try {
+      const extractResp = await fetch(`${API_BASE}/api/extract`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: noteText, source: sourceText })
+      })
+      const extractData = await extractResp.json()
+      if (extractData.error) throw new Error(extractData.error)
+      const card = extractData.card
+      _pendingCards.push(card)
+      document.getElementById(safeId).remove()
+      renderPendingCards()
+    } catch (e) {
+      document.getElementById(safeId).innerHTML = `<p class="text-xs text-red-500">⚠ 提炼失败：${e.message}</p>`
+    }
+    btn.disabled = false
+    btn.innerHTML = '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 确认上传'
+    return
+  }
+
+  for (const file of _pendingImgFiles) {
+    const safeId = 'ocr_' + Math.random().toString(36).slice(2)
+    const placeholder = document.createElement('div')
+    placeholder.id = safeId
+    placeholder.className = 'mt-2 p-3 bg-violet-50 border border-violet-100 rounded-lg'
+    placeholder.innerHTML = `<p class="text-xs text-violet-500">⏳ 第1步/3：识别「${file.name}」中的文字...</p>`
+    document.getElementById('file-list').appendChild(placeholder)
+
+    try {
+      btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid white;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></div> 第1步：OCR识别中...'
+
+      const b64 = await _imgToB64(file)
+      const ocrResp = await fetch(`${API_BASE}/api/ocr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: b64, mime: file.type || 'image/jpeg' })
+      })
+      const ocrData = await ocrResp.json()
+      const ocrText = ocrData.text || ocrData.error || ''
+
+      if (!ocrText.trim()) {
+        document.getElementById(safeId).innerHTML = `<p class="text-xs text-red-500">⚠ 识别结果为空，请上传更清晰的图片</p>`
+        continue
+      }
+
+      const preview = ocrText.trim().slice(0, 100) + (ocrText.length > 100 ? '…' : '')
+      document.getElementById(safeId).innerHTML = `<p class="text-xs font-semibold text-violet-600 mb-1">✓ 第1步完成：OCR识别</p><p class="text-xs text-gray-600 leading-relaxed">${preview}</p>`
+
+      btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid white;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></div> 第2步：AI提炼知识卡片...'
+      const extId = safeId + '_ext'
+      const extEl = document.createElement('div')
+      extEl.id = extId
+      extEl.className = 'mt-2 p-3 bg-green-50 border border-green-100 rounded-lg'
+      extEl.innerHTML = `<p class="text-xs text-green-600">⏳ 第2步/3：AI正在提炼知识卡片...</p>`
+      document.getElementById('file-list').appendChild(extEl)
+
+      const fullText = noteText ? `${ocrText}\n\n老师备注：${noteText}` : ocrText
+      const extractResp = await fetch(`${API_BASE}/api/extract`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: fullText, source: sourceText })
+      })
+      const extractData = await extractResp.json()
+      if (extractData.error) throw new Error(extractData.error)
+
+      const card = extractData.card
+      _pendingCards.push(card)
+      document.getElementById(extId).remove()
+      document.getElementById(safeId).remove()
+      renderPendingCards()
+
+    } catch (e) {
+      const errEl = document.getElementById(safeId)
+      if (errEl) {
+        errEl.className = 'mt-2 p-3 bg-red-50 border border-red-100 rounded-lg'
+        errEl.innerHTML = `<p class="text-xs text-red-500">⚠ 处理失败（${e.message}）</p>`
+      }
+    }
+  }
+
+  btn.disabled = false
+  btn.innerHTML = '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 确认上传'
+}
+
+function renderPendingCards() {
+  const list = document.getElementById('file-list')
+  const existing = list.querySelector('.pending-review')
+  if (existing) existing.remove()
+
+  if (_pendingCards.length === 0) return
+
+  const container = document.createElement('div')
+  container.className = 'pending-review mt-4 space-y-3'
+
+  _pendingCards.forEach((card, idx) => {
+    const isYoga = (card.tags || []).some(t =>
+      ['瑜伽','普拉提','髋关节','脊柱','骨盆','肩颈','核心','口令','久坐族','腰椎',
+       '普拉提基础','特殊人群','进退阶','热身','改良动作','核心稳定','证书'].some(k => t.includes(k))
+    ) || (card.title || '').match(/瑜伽|普拉提|髋|脊柱|骨盆|肩颈|核心|口令|腰椎|Thomas|Hundred|Roll/i)
+
+    const badge = isYoga
+      ? '<span class="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full">🧘 瑜伽/普拉提相关</span>'
+      : '<span class="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full">⚠️ 非行业内容，请确认是否入库</span>'
+
+    const cautionHtml = card.cautions ? `<p class="text-xs text-amber-600 bg-amber-50 rounded px-2 py-1 mt-2">⚠️ ${card.cautions}</p>` : ''
+
+    container.innerHTML += `
+      <div class="border border-gray-200 rounded-xl p-4 bg-white shadow-sm" id="pending-${idx}">
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <h3 class="text-sm font-semibold text-gray-900 flex-1">${card.title}</h3>
+          ${badge}
+        </div>
+        <ul class="space-y-1 mb-2">${(card.keyPoints||[]).map(p => `<li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-violet-400 shrink-0">·</span>${p}</li>`).join('')}</ul>
+        ${cautionHtml}
+        ${card.targetAudience ? `<p class="text-xs text-blue-600 mt-1">👥 ${card.targetAudience}</p>` : ''}
+        <div class="flex gap-1.5 mt-2 mb-3">${(card.tags||[]).map(t => `<span class="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>
+        <div class="flex gap-2 pt-2 border-t border-gray-100">
+          <button onclick="confirmCard(${idx})" class="flex-1 bg-violet-600 text-white text-xs py-2 rounded-lg hover:bg-violet-700 transition-colors font-medium">✓ 确认入库</button>
+          <button onclick="confirmCard(${idx})" class="flex-1 bg-gray-100 text-gray-600 text-xs py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium">✓ 入库（非行业）</button>
+          <button onclick="rejectCard(${idx})" class="px-4 bg-red-50 text-red-500 text-xs py-2 rounded-lg hover:bg-red-100 transition-colors font-medium">✗ 丢弃</button>
+        </div>
+      </div>`
+  })
+
+  list.appendChild(container)
+}
+
+async function confirmCard(idx) {
+  const card = _pendingCards[idx]
+  if (!card) return
+
+  const el = document.getElementById(`pending-${idx}`)
+  if (el) {
+    el.innerHTML = `<div class="flex items-center gap-2 py-2"><div style="width:14px;height:14px;border:2px solid #7c3aed;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></div><span class="text-xs text-violet-600">正在生成向量索引并入库...</span></div>`
+  }
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/add-card`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card })
+    })
+    const data = await resp.json()
+    if (data.related && data.related.length) {
+      card.related = data.related
+    }
+  } catch (e) {
+    console.error('向量索引失败:', e)
+  }
+
+  const cards = loadLocalCards()
+  if (!card.related) card.related = []
+  cards.push(card)
+  saveLocalCards(cards)
+
+  if (el) {
+    el.innerHTML = `<div class="flex items-center gap-2 py-2"><span class="text-green-500">✓</span><span class="text-xs text-green-600 font-medium">已入库：${card.title}</span></div>`
+    el.className = 'border border-green-200 rounded-xl p-4 bg-green-50'
+  }
+
+  _pendingCards[idx] = null
+  renderLibrary()
+
+  const remaining = _pendingCards.filter(c => c !== null)
+  if (remaining.length === 0) {
+    setTimeout(() => {
+      showPage('library')
+      showToast('✓ 知识卡片已入库，可在知识库中查看')
+      document.getElementById('upload-note').value = ''
+      document.getElementById('upload-source').value = ''
+      document.getElementById('file-list').innerHTML = ''
+      _pendingImgFiles = []
+      _pendingCards = []
+    }, 1500)
+  }
+}
+
+function rejectCard(idx) {
+  const el = document.getElementById(`pending-${idx}`)
+  if (el) {
+    el.innerHTML = `<div class="flex items-center gap-2 py-2"><span class="text-gray-400">✗</span><span class="text-xs text-gray-400">已丢弃</span></div>`
+    el.className = 'border border-gray-100 rounded-xl p-4 bg-gray-50 opacity-50'
+  }
+  _pendingCards[idx] = null
+
+  const remaining = _pendingCards.filter(c => c !== null)
+  if (remaining.length === 0) {
+    setTimeout(() => {
+      document.getElementById('upload-note').value = ''
+      document.getElementById('upload-source').value = ''
+      document.getElementById('file-list').innerHTML = ''
+      _pendingImgFiles = []
+      _pendingCards = []
+    }, 1000)
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.classList.remove('hidden')
+  setTimeout(() => t.classList.add('hidden'), 3500)
+}
+
+// ── AI问答（RAG） ──
+function appendMessage(role, content) {
+  const container = document.getElementById('chat-messages')
+  const isUser = role === 'user'
+  const el = document.createElement('div')
+  el.className = `flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`
+  el.innerHTML = isUser
+    ? `<div class="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center shrink-0 mt-0.5 text-violet-700 font-bold text-xs">李</div>
+       <div class="bg-violet-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm max-w-sm leading-relaxed">${content}</div>`
+    : `<div class="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center shrink-0 mt-0.5 text-white text-xs font-bold">✦</div>
+       <div class="flex-1">${content}</div>`
+  container.appendChild(el)
+  container.scrollTop = container.scrollHeight
+}
+
+function appendThinking() {
+  const container = document.getElementById('chat-messages')
+  const el = document.createElement('div')
+  el.id = 'thinking-bubble'
+  el.className = 'flex gap-3'
+  el.innerHTML = `<div class="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center shrink-0 mt-0.5 text-white text-xs font-bold">✦</div>
+    <div class="bg-white rounded-2xl rounded-tl-sm border border-gray-100 px-4 py-3 shadow-sm flex items-center gap-1.5">
+      <span class="w-1.5 h-1.5 bg-violet-400 rounded-full" style="animation:pulse 1.2s 0s infinite"></span>
+      <span class="w-1.5 h-1.5 bg-violet-400 rounded-full" style="animation:pulse 1.2s 0.2s infinite"></span>
+      <span class="w-1.5 h-1.5 bg-violet-400 rounded-full" style="animation:pulse 1.2s 0.4s infinite"></span>
+    </div>`
+  container.appendChild(el)
+  container.scrollTop = container.scrollHeight
+}
+
+function buildRAGAnswerHTML(data) {
+  const answerHtml = data.answer.replace(/\n/g, '<br>')
+  const sources = data.sources && data.sources.length ? `
+    <div class="mt-3 pt-3 border-t border-gray-100">
+      <p class="text-xs text-gray-400 mb-1.5">📚 引用自你的笔记：</p>
+      <div class="flex flex-wrap gap-1.5">${data.sources.map(s => `<span class="text-xs bg-violet-50 text-violet-600 px-2 py-0.5 rounded-md border border-violet-100">${s}</span>`).join('')}</div>
+    </div>` : ''
+  const modeBadge = data.mode === 'rag'
+    ? '<span class="text-[10px] text-green-500 bg-green-50 px-1.5 py-0.5 rounded ml-2">RAG</span>'
+    : ''
+  return `<div class="bg-white rounded-2xl rounded-tl-sm border border-gray-100 px-4 py-3 shadow-sm max-w-xl">
+    <p class="text-sm text-gray-700 leading-relaxed font-medium mb-1">基于知识库的回答${modeBadge}</p>
+    <div class="text-sm text-gray-700 leading-relaxed">${answerHtml}</div>
+    ${sources}
+  </div>`
+}
+
+const AI_RESPONSES = {
+  '腰椎间盘突出': {
+    answer: `根据你的笔记，针对腰椎间盘突出学员有以下要点：`,
+    points: [
+      '骨盆中立位是前提，使用"尾骨自然下垂"口令而非"用力收腹"（来自你的笔记：骨盆中立位的三种口令对比）',
+      '避免髋屈肌过度拉伸：Thomas Test先评估，急性期禁用弓步拉伸（来自你的笔记：髋屈肌紧张的评估与改善方案）',
+      'Roll Up 系列使用退阶版本：弯膝、脚踩墙，保护腰椎不过屈（来自你的笔记：Roll Up系列的进阶与退阶方案）',
+    ],
+    community: '社区补充：肩袖损伤学员的动作调整思路对腰椎学员同样适用——凡涉及脊柱屈曲的动作均需评估后再给。（来自 Rachel老师）',
+    sources: ['骨盆中立位的三种口令对比', '髋屈肌紧张的评估与改善方案', 'Roll Up 系列的进阶与退阶方案']
+  },
+  '久坐族': {
+    answer: `针对久坐族的60分钟普拉提课程大纲，结合你的笔记：`,
+    points: [
+      '课前热身（8分钟）：肩颈放松序列——颈部侧屈、肩胛骨绕圈、胸椎旋转（来自你的笔记：肩颈放松序列）',
+      '评估与激活（10分钟）：Thomas Test检查髋屈肌紧张程度，决定当天强化重点（来自你的笔记：髋屈肌紧张的评估与改善方案）',
+      '主体训练（35分钟）：骨盆稳定 → Hundred基础版 → 脊柱延伸系列，髋屈肌改善优先',
+      '放松收尾（7分钟）：髂腰肌弓步拉伸，强调骨盆中立不塌腰',
+    ],
+    community: '社区补充：初学者课堂前10分钟建议先建立骨盆中立意识，用"感受"替代术语。（来自 Grace老师）',
+    sources: ['肩颈放松序列（久坐族课前热身）', '髋屈肌紧张的评估与改善方案']
+  },
+  '口令': {
+    answer: `你的笔记里有关于骨盆中立位口令的详细对比：`,
+    points: [
+      '"想象坐骨指向地面，尾骨自然下垂"——适合初学者建立感知，最自然',
+      '"肚脐轻轻向内收，腰椎和垫子间留一张纸的空间"——适合有一定基础、需要精确控制的学员',
+      '避免"收腹"口令——容易引发屏气，腹横肌反而无法正确激活',
+      '你的个人注解：用"尾巴轻轻垂下"的比喻对初学者效果最好',
+    ],
+    community: null,
+    sources: ['骨盆中立位的三种口令对比']
+  }
+}
+
+function buildFallbackHTML(res) {
+  const points = res.points.map(p => `<li class="text-sm text-gray-700 leading-relaxed flex items-start gap-2"><span class="text-violet-400 shrink-0 mt-0.5">·</span>${p}</li>`).join('')
+  const sources = res.sources.length ? `
+    <div class="mt-3 pt-3 border-t border-gray-100">
+      <p class="text-xs text-gray-400 mb-1.5">引用自你的笔记：</p>
+      <div class="flex flex-wrap gap-1.5">${res.sources.map(s => `<span class="text-xs bg-violet-50 text-violet-600 px-2 py-0.5 rounded-md border border-violet-100">${s}</span>`).join('')}</div>
+    </div>` : ''
+  const community = res.community ? `
+    <div class="mt-2 p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+      <p class="text-xs text-gray-400 mb-0.5">社区补充</p>
+      <p class="text-xs text-gray-500 leading-relaxed">${res.community}</p>
+    </div>` : ''
+  return `<div class="bg-white rounded-2xl rounded-tl-sm border border-gray-100 px-4 py-3 shadow-sm max-w-xl">
+    <p class="text-sm text-gray-700 mb-2 font-medium">${res.answer}<span class="text-[10px] text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded ml-2">离线模式</span></p>
+    <ul class="space-y-1.5">${points}</ul>
+    ${community}${sources}
+  </div>`
+}
+
+function getFallbackResponse(q) {
+  if (q.includes('腰椎') || q.includes('椎间盘') || q.includes('腰')) return AI_RESPONSES['腰椎间盘突出']
+  if (q.includes('久坐') || q.includes('课程') || q.includes('大纲')) return AI_RESPONSES['久坐族']
+  if (q.includes('口令') || q.includes('骨盆')) return AI_RESPONSES['口令']
+  return {
+    answer: '根据你目前的 6 条笔记，我暂时没有找到直接相关的内容。',
+    points: ['建议上传更多相关培训录音或笔记，让我更了解你的知识体系', '你也可以换一种问法，比如描述具体的学员状况或动作名称'],
+    community: '社区知识库中可能有相关内容，建议前往检索页搜索。',
+    sources: []
+  }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input')
+  const q = input.value.trim()
+  if (!q) return
+  input.value = ''
+  input.style.height = 'auto'
+  appendMessage('user', q)
+  appendThinking()
+
+  if (BACKEND_READY) {
+    try {
+      const resp = await fetch(`${API_BASE}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: q })
+      })
+      const data = await resp.json()
+      document.getElementById('thinking-bubble')?.remove()
+      appendMessage('ai', buildRAGAnswerHTML(data))
+      return
+    } catch (e) {
+      console.error('RAG请求失败，回退到离线模式:', e)
+    }
+  }
+
+  setTimeout(() => {
+    document.getElementById('thinking-bubble')?.remove()
+    const res = getFallbackResponse(q)
+    appendMessage('ai', buildFallbackHTML(res))
+  }, 1200)
+}
+
+function sendPreset(q) {
+  document.getElementById('chat-input').value = q
+  sendChat()
+}
+
+function autoResize(el) {
+  el.style.height = 'auto'
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+}
+
+const style = document.createElement('style')
+style.textContent = '@keyframes spin { to { transform: rotate(360deg) } }'
+document.head.appendChild(style)
+
+renderLibrary()
+initBackend()
+
+</script>
+</body>
+</html>
