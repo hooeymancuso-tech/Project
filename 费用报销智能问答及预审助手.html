@@ -1,0 +1,1053 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>报销预检助手</title>
+  <style>
+    :root {
+      --bg: #e8eef8;
+      --sidebar: #0c1f3d;
+      --sidebar-end: #152a4d;
+      --primary: #2f6fec;
+      --primary-dark: #1e4fc4;
+      --text: #152238;
+      --muted: #5a6d85;
+      --border: #c8d4e8;
+      --white: #fff;
+      --risk: #dc3545;
+      --warn: #e8a317;
+      --ok: #1a9c5c;
+      --font-base: 17px;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html { font-size: var(--font-base); }
+    body {
+      margin: 0; height: 100vh;
+      background: linear-gradient(165deg, #dfe8f5 0%, #e8eef8 40%, #eef2fa 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      line-height: 1.55; overflow: hidden;
+    }
+    .app {
+      height: 100vh; display: grid;
+      grid-template-columns: minmax(260px, 17vw) 1fr;
+      max-width: 1920px; margin: 0 auto; overflow: hidden;
+    }
+    /* Sidebar */
+    .sidebar {
+      background: linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-end) 55%, #0a1830 100%);
+      color: #e8f0ff; padding: 1.1rem 1rem;
+      display: flex; flex-direction: column; gap: 0.65rem;
+      box-shadow: 4px 0 24px rgba(12,31,61,0.25);
+      position: relative; overflow: hidden;
+    }
+    .brand {
+      font-size: 1.35rem; font-weight: 800; letter-spacing: 0.02em;
+      margin-bottom: 0.35rem; line-height: 1.25;
+      padding: 0 0.3rem; display: flex; align-items: center; gap: 0.45rem;
+    }
+    .brand-mark {
+      width: 1.45rem; height: 1.45rem;
+      border-radius: 0.42rem 0.42rem 0.55rem 0.55rem;
+      background: linear-gradient(140deg, #7bb2ff 0%, #2f6fec 45%, #1e4fc4 100%);
+      position: relative; box-shadow: 0 4px 12px rgba(47,111,236,0.45);
+      flex-shrink: 0; transform: rotate(45deg);
+    }
+    .brand-mark::before {
+      content: ""; position: absolute; inset: 0.26rem;
+      border-radius: 0.25rem 0.25rem 0.4rem 0.4rem;
+      background: rgba(255,255,255,0.2);
+    }
+    .brand-mark::after {
+      content: ""; position: absolute;
+      width: 0.34rem; height: 0.62rem;
+      border: solid #fff; border-width: 0 2px 2px 0;
+      left: 0.52rem; top: 0.3rem; transform: rotate(45deg); opacity: 0.95;
+    }
+    .nav-item {
+      min-height: 2.65rem; border-radius: 10px;
+      display: flex; align-items: center; padding: 0 1rem;
+      font-size: 1.05rem; font-weight: 500;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer; transition: background 0.2s, transform 0.15s;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.12); }
+    .nav-item.active {
+      background: linear-gradient(135deg, #3d7cff 0%, var(--primary-dark) 100%);
+      border-color: rgba(255,255,255,0.2); color: #fff; font-weight: 700;
+      box-shadow: 0 6px 20px rgba(47,111,236,0.35);
+    }
+    .sidebar-spacer { flex: 1; min-height: 1rem; }
+    .user-card {
+      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius); padding: 0.85rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      position: absolute; left: 1rem; right: 1rem; bottom: 1rem;
+    }
+    .avatar {
+      width: 2.5rem; height: 2.5rem; border-radius: 50%;
+      background: linear-gradient(135deg, #5b9dff, var(--primary));
+      color: #fff; font-weight: 800; display: grid; place-items: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .user-name { font-size: 1.05rem; font-weight: 700; }
+    .user-id { font-size: 0.82rem; color: #a8c4f0; margin-top: 0.15rem; }
+    /* Main */
+    .main {
+      padding: 1rem 1.15rem 1.15rem;
+      display: flex; flex-direction: column;
+      min-height: 0; height: 100vh; overflow: hidden;
+    }
+    .page {
+      display: none; flex: 1; min-height: 0; height: 100%;
+      grid-template-columns: 1fr minmax(340px, 26vw);
+      gap: 1rem; align-items: stretch; overflow: hidden;
+    }
+    .page.active { display: grid; }
+    .panel-main {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 40px rgba(21,34,56,0.08);
+      min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .panel-main.scrollable { overflow-y: auto; }
+    .panel-head {
+      padding: 0.85rem 1.15rem; font-size: 1.15rem; font-weight: 800;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, #fafcff 0%, #f4f8ff 100%);
+      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+    }
+    .head-title { font-size: 1.15rem; font-weight: 800; color: #1a2d4a; }
+    .head-metrics { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; justify-content: flex-end; }
+    .head-pill { border-radius: 999px; padding: 0.35rem 0.65rem; font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
+    .head-pill.green { background: #e6f9ef; color: #0d6b3d; border: 1px solid #b8e8cc; }
+    .head-pill.blue { background: #eaf1ff; color: #2a5088; border: 1px solid #c9daf7; }
+    .right-col {
+      display: flex; flex-direction: column; gap: 0.85rem;
+      min-height: 0; overflow-y: auto; padding-right: 0.15rem;
+    }
+    .card {
+      border-radius: var(--radius); padding: 1rem 1.1rem;
+      border: 1px solid rgba(255,255,255,0.65);
+      background: linear-gradient(145deg, #ffffff 0%, #f5f8ff 55%, #eef4ff 100%);
+      box-shadow: 0 8px 28px rgba(47,90,160,0.1);
+    }
+    .card h3 { margin: 0 0 0.65rem; font-size: 1.08rem; font-weight: 800; color: #1a2d4a; }
+    .list { margin: 0; padding-left: 1.15rem; font-size: 0.98rem; color: var(--muted); line-height: 1.75; }
+    .metrics-row { display: grid; gap: 0.55rem; }
+    .metric-pill {
+      border-radius: 10px; padding: 0.55rem 0.75rem; font-size: 0.92rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+    }
+    .metric-pill.risk { background: linear-gradient(90deg, #ffe8ea 0%, #ffd6da 100%); color: #9b1c2e; border: 1px solid #f5b5bc; }
+    .metric-pill.warn { background: linear-gradient(90deg, #fff8e6 0%, #ffefc2 100%); color: #8a5a00; border: 1px solid #f0d080; }
+    .metric-pill.ok { background: linear-gradient(90deg, #e6f9ef 0%, #d2f0e0 100%); color: #0d6b3d; border: 1px solid #9ee0bc; }
+    .metric-pill .val { font-size: 1.05rem; }
+    .link-list { list-style: none; margin: 0; padding: 0; font-size: 0.98rem; }
+    .link-list li { padding: 0.35rem 0; color: var(--primary); font-weight: 600; cursor: pointer; }
+    .link-list li:hover { text-decoration: underline; }
+    .todo-checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; font-size: 0.98rem; }
+    .todo-check-item { display: flex; align-items: flex-start; gap: 0.55rem; cursor: pointer; color: var(--muted); }
+    .todo-dot {
+      width: 1rem; height: 1rem; border: 2px solid #9ab3d6; border-radius: 50%;
+      flex-shrink: 0; margin-top: 0.18rem; background: #fff;
+    }
+    .todo-check-item.done .todo-dot {
+      background: linear-gradient(135deg, var(--ok), #49c883); border-color: #49c883; position: relative;
+    }
+    .todo-check-item.done .todo-dot::after {
+      content: ""; position: absolute; width: 0.3rem; height: 0.55rem;
+      border: solid #fff; border-width: 0 2px 2px 0; left: 0.27rem; top: 0.08rem; transform: rotate(45deg);
+    }
+    .todo-check-item.done .todo-text { text-decoration: line-through; color: #9aa8bc; }
+    .ask-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+    .ask-item {
+      padding: 0.55rem 0.7rem; border: 1px solid #d3dff2; border-radius: 9px;
+      background: #f7faff; color: #2a5088; font-size: 0.92rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .ask-item:hover { background: #eef4ff; border-color: #b5caef; }
+    .safety-line {
+      font-size: 0.92rem; color: #395576; border-radius: 10px; padding: 0.65rem 0.75rem;
+      background: #f8fbff; border: 1px solid #d3dff2; font-weight: 700;
+    }
+    /* Chat */
+    .chat-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; background: linear-gradient(180deg, #f0f4fc 0%, #e8eef8 100%); }
+    .chat-scroll { flex: 1; overflow-y: auto; padding: 1.1rem 1.15rem; display: flex; flex-direction: column; gap: 0.85rem; }
+    .msg-row { display: flex; width: 100%; }
+    .msg-row.ai { justify-content: flex-start; }
+    .msg-row.user { justify-content: flex-end; }
+    .bubble { max-width: min(88%, 36rem); padding: 0.75rem 1rem; border-radius: 12px; font-size: 1.02rem; line-height: 1.6; }
+    .bubble.ai { background: #fff; border: 1px solid #d0ddf0; color: #1e3a5c; border-bottom-left-radius: 4px; }
+    .bubble.user { background: linear-gradient(135deg, #4a82ff 0%, var(--primary) 100%); color: #fff; border-bottom-right-radius: 4px; }
+    .invoice-thumb { width: min(360px, 72vw); border-radius: 10px; overflow: hidden; border: 1px solid #c5d4ec; box-shadow: 0 6px 20px rgba(0,0,0,0.12); background: #fff; }
+    .invoice-thumb svg { display: block; width: 100%; height: auto; }
+    .option-row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.25rem; }
+    .small-btn {
+      border: 1px solid #c5d4ec; background: #fff; color: #2a5088; border-radius: 999px;
+      min-height: 2.35rem; padding: 0 1.1rem; font-size: 0.98rem; font-weight: 700;
+      cursor: pointer; transition: 0.2s;
+    }
+    .small-btn:hover { background: #f0f5ff; }
+    .small-btn.primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #fff; border-color: transparent; }
+    .composer-bar { display: flex; align-items: center; gap: 0.65rem; padding: 0.75rem 1rem; background: #fff; border-top: 1px solid var(--border); }
+    .icon-round {
+      width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 1px solid #c5d4ec;
+      background: linear-gradient(180deg, #f7faff 0%, #eef3fb 100%);
+      display: grid; place-items: center; cursor: pointer; flex-shrink: 0; transition: 0.2s;
+    }
+    .icon-round:hover { background: #e4edff; border-color: #9bb8e8; }
+    .icon-round svg { width: 1.15rem; height: 1.15rem; fill: #35507d; }
+    .icon-round.disabled { opacity: 0.45; cursor: not-allowed; }
+    .icon-round.disabled:hover { background: linear-gradient(180deg, #f7faff 0%, #eef3fb 100%); border-color: #c5d4ec; }
+    .composer-input {
+      flex: 1; min-height: 2.75rem; border: 1px solid #c5d4ec; border-radius: 999px;
+      padding: 0 1.1rem; font-size: 1rem; outline: none; background: #f8fbff;
+    }
+    .composer-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(47,111,236,0.15); }
+    .hidden-file { display: none; }
+    /* OCR editable card */
+    .ocr-card {
+      background: #fff; border: 1px solid #d0ddf0; border-radius: 12px; padding: 1rem;
+      max-width: min(88%, 36rem); font-size: 0.98rem; line-height: 1.7;
+    }
+    .ocr-card .ocr-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+    .ocr-card .ocr-label { color: #5a6d85; font-weight: 600; min-width: 4.5em; }
+    .ocr-card .ocr-value {
+      color: #1e3a5c; font-weight: 700; border-bottom: 1px dashed #c8d4e8; padding-bottom: 1px;
+      outline: none; min-width: 3em; transition: border-color 0.2s;
+    }
+    .ocr-card .ocr-value:focus { border-bottom-color: var(--primary); }
+    .ocr-card .ocr-actions { margin-top: 0.65rem; display: flex; gap: 0.6rem; }
+    /* Precheck result card */
+    .precheck-card {
+      border-radius: 12px; padding: 1rem; max-width: min(88%, 36rem);
+      font-size: 0.98rem; line-height: 1.7;
+    }
+    .precheck-card.pass { background: #e6f9ef; border: 2px solid #49c883; }
+    .precheck-card.warn { background: #fff8e6; border: 2px solid #f0d080; }
+    .precheck-card.block { background: #ffe8ea; border: 2px solid #f5b5bc; }
+    .precheck-card .pc-result { font-weight: 800; font-size: 1.1rem; margin-bottom: 0.3rem; }
+    .precheck-card.pass .pc-result { color: #0d6b3d; }
+    .precheck-card.warn .pc-result { color: #8a5a00; }
+    .precheck-card.block .pc-result { color: #9b1c2e; }
+    .precheck-card .pc-reason { color: #395576; margin-bottom: 0.3rem; }
+    .precheck-card .pc-advice { color: #1a2d4a; font-weight: 700; }
+    /* Thinking dots */
+    .thinking-dots { display: flex; gap: 0.3rem; padding: 0.75rem 1rem; }
+    .thinking-dots span {
+      width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #9ab3d6;
+      animation: blink 1.4s infinite both;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,80%,100%{opacity:0.3} 40%{opacity:1} }
+    /* Todo page */
+    .todo-grid { display: flex; flex-direction: column; gap: 0.75rem; }
+    .todo-card {
+      border-radius: 12px; padding: 1rem; border: 1px solid var(--border);
+      background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.04); width: 100%;
+      position: relative;
+    }
+    .todo-card .tag { display: inline-block; font-size: 0.82rem; font-weight: 800; padding: 0.25rem 0.55rem; border-radius: 6px; margin-bottom: 0.5rem; }
+    .tag.reject { background: #ffe8ea; color: #b02a37; }
+    .tag.pass { background: #e6f9ef; color: #0d6b3d; }
+    .tag.unknown { background: #fff4e0; color: #8a5a00; }
+    .tag.pending { background: #eaf1ff; color: #2a5088; }
+    .todo-card .title { font-weight: 800; font-size: 1.05rem; margin-bottom: 0.35rem; }
+    .todo-card .meta { font-size: 0.92rem; color: var(--muted); line-height: 1.55; }
+    .todo-card .action-btn {
+      margin-top: 0.65rem; display: inline-block; border: 1px solid var(--primary);
+      color: var(--primary); border-radius: 999px; padding: 0.3rem 0.85rem;
+      font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s;
+      background: transparent;
+    }
+    .todo-card .action-btn:hover { background: var(--primary); color: #fff; }
+    /* Table */
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.98rem; background: #fff; }
+    th, td { padding: 0.75rem 0.85rem; text-align: left; border-bottom: 1px solid #e4ebf5; }
+    th {
+      background: linear-gradient(180deg, #f4f8ff 0%, #eef3fb 100%);
+      font-weight: 800; color: #1a2d4a; font-size: 0.95rem; cursor: pointer; user-select: none;
+    }
+    th:hover { color: var(--primary); }
+    th .sort-arrow { font-size: 0.7rem; margin-left: 0.2rem; }
+    tr:hover td { background: #fafcff; }
+    .amt { font-weight: 800; color: #1e4fc4; }
+    .status-dot { display: inline-block; width: 0.45rem; height: 0.45rem; border-radius: 50%; margin-right: 0.35rem; vertical-align: middle; }
+    .status-dot.done { background: var(--ok); }
+    .status-dot.run { background: var(--warn); }
+    .status-dot.fail { background: var(--risk); }
+    /* Filter tabs */
+    .filter-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .filter-tab {
+      padding: 0.4rem 0.85rem; border-radius: 999px; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--muted); transition: 0.2s;
+    }
+    .filter-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .filter-tab:hover:not(.active) { background: #f0f5ff; }
+    /* Help */
+    .help-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; padding: 1rem; }
+    .help-stack { padding: 0 1rem 1rem; display: grid; gap: 0.85rem; }
+    .faq-item {
+      border: 1px solid var(--border); border-radius: 10px; padding: 0.55rem 0.7rem;
+      margin-bottom: 0.45rem; background: #fafcff; cursor: pointer; transition: background 0.2s;
+    }
+    .faq-item:hover { background: #eef4ff; }
+    .faq-item strong { display: block; margin-bottom: 0; color: #1a2d4a; }
+    .faq-answer { display: none; margin-top: 0.4rem; color: var(--muted); font-size: 0.92rem; line-height: 1.6; }
+    .faq-item.open .faq-answer { display: block; }
+    .form-group { margin-bottom: 0.75rem; }
+    .form-group label { display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.35rem; color: #2a5088; }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;
+    }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    /* Toast */
+    .toast {
+      position: fixed; top: 1.5rem; right: 1.5rem; background: #1a2d4a; color: #fff;
+      padding: 0.85rem 1.3rem; border-radius: 10px; font-size: 0.95rem; font-weight: 600;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.18); z-index: 9999;
+      animation: toastIn 0.3s ease, toastOut 0.3s ease 2.2s forwards;
+    }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-1rem); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-1rem); } }
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .page.active { grid-template-columns: 1fr; }
+      .right-col { flex-direction: row; flex-wrap: wrap; }
+      .right-col .card { flex: 1 1 45%; min-width: 260px; }
+    }
+    @media (max-width: 720px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { flex-direction: row; flex-wrap: wrap; align-items: center; padding: 0.6rem; gap: 0.4rem; }
+      .brand { width: 100%; font-size: 1.1rem; }
+      .nav-item { flex: 1 1 40%; justify-content: center; font-size: 0.9rem; min-height: 2.2rem; padding: 0 0.6rem; }
+      .sidebar-spacer { display: none; }
+      .user-card { width: 100%; position: static; }
+      .main { padding: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar">
+    <div class="brand"><span class="brand-mark"></span>报销预检助手</div>
+    <div class="nav-item active" data-page="page-selfcheck">智能对话</div>
+    <div class="nav-item" data-page="page-todo">待处理单</div>
+    <div class="nav-item" data-page="page-my">我的报销</div>
+    <div class="nav-item" data-page="page-help">帮助反馈</div>
+    <div class="sidebar-spacer"></div>
+    <div class="user-card">
+      <div class="avatar">张</div>
+      <div><div class="user-name">张三</div><div class="user-id">EMP-20260428</div></div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <!-- 智能对话 -->
+    <div id="page-selfcheck" class="page active">
+      <section class="panel-main">
+        <div class="panel-head">
+          <div class="head-title">智能对话</div>
+          <div class="head-metrics">
+            <span class="head-pill green">本月驳回率 9.8%</span>
+            <span class="head-pill blue">平均审核时长 2.1 分钟</span>
+          </div>
+        </div>
+        <div class="chat-wrap">
+          <div class="chat-scroll" id="chatScroll">
+            <div class="msg-row user">
+              <div class="invoice-thumb" title="用户上传的发票">
+                <svg viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="420" height="260" fill="#f1f5fb"/>
+                  <rect x="14" y="14" width="392" height="232" rx="8" fill="#ffffff" stroke="#d1ddea"/>
+                  <text x="30" y="38" font-size="13" fill="#64748b">增值税电子普通发票（样例）</text>
+                  <text x="30" y="64" font-size="24" font-weight="bold" fill="#0f172a">¥ 1,680.00</text>
+                  <text x="30" y="90" font-size="11" fill="#64748b">开票日期：2026-04-28</text>
+                  <text x="30" y="110" font-size="11" fill="#64748b">购方：上海某某科技有限公司</text>
+                  <text x="30" y="130" font-size="11" fill="#64748b">项目：现代服务 / 交通费</text>
+                  <line x1="26" y1="144" x2="394" y2="144" stroke="#e2e8f0"/>
+                  <text x="30" y="166" font-size="11" fill="#334155">价税合计（大写）：壹仟陆佰捌拾元整</text>
+                  <text x="30" y="186" font-size="11" fill="#334155">发票号码：13456789</text>
+                  <text x="30" y="206" font-size="11" fill="#334155">校验码：0168 5623 9041 7783</text>
+                  <rect x="290" y="156" width="98" height="74" fill="#f8fafc" stroke="#d8e2ef"/>
+                  <text x="306" y="196" font-size="10" fill="#94a3b8">二维码</text>
+                </svg>
+              </div>
+            </div>
+            <div class="msg-row ai">
+              <div class="bubble ai">已识别发票信息，请核对以下字段。如需修改，直接点击对应值即可编辑：</div>
+            </div>
+            <div class="msg-row ai" id="ocr-card-row">
+              <div class="ocr-card" id="ocrCard">
+                <div class="ocr-row"><span class="ocr-label">类目：</span><span class="ocr-value" contenteditable="true" data-field="category">差旅费</span></div>
+                <div class="ocr-row"><span class="ocr-label">金额：</span><span class="ocr-value" contenteditable="true" data-field="amount">¥1,680</span></div>
+                <div class="ocr-row"><span class="ocr-label">审批人：</span><span class="ocr-value" contenteditable="true" data-field="approver">李经理</span></div>
+                <div class="ocr-row"><span class="ocr-label">申请者：</span><span class="ocr-value" contenteditable="true" data-field="applicant">张三</span></div>
+                <div class="ocr-row"><span class="ocr-label">用途：</span><span class="ocr-value" contenteditable="true" data-field="description">客户拜访往返交通</span></div>
+                <div class="ocr-actions">
+                  <button type="button" class="small-btn primary" id="btn-ocr-confirm">确认无误</button>
+                </div>
+              </div>
+            </div>
+            <div class="msg-row ai" id="preaudit-wrap" style="display:none;">
+              <div class="bubble ai">信息确认完成，是否进行合规预审？</div>
+            </div>
+            <div class="msg-row ai" id="preaudit-btn-wrap" style="display:none;">
+              <div class="bubble ai" style="border:none;background:transparent;padding-left:0;">
+                <button type="button" class="small-btn primary" id="btn-yes">开始预审</button>
+              </div>
+            </div>
+            <div class="msg-row user">
+              <div class="bubble user">客户招待买了水果礼盒，能报吗？</div>
+            </div>
+            <div class="msg-row ai">
+              <div class="bubble ai">根据《业务招待费用管理规定》第 6 条，可以报销。请上传金额与发票。</div>
+            </div>
+            <div class="msg-row user">
+              <div class="bubble user">周末和同事聚餐这笔能报吗？</div>
+            </div>
+            <div class="msg-row ai">
+              <div class="bubble ai">根据《员工福利与招待费用规定》第 4 条，此项不可以报销。</div>
+            </div>
+          </div>
+          <div class="composer-bar">
+            <button type="button" class="icon-round disabled" id="btn-mic" title="即将上线" aria-label="语音输入">
+              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V20H9v2h6v-2h-2v-2.08A7 7 0 0 0 19 11h-2z"/></svg>
+            </button>
+            <input type="text" class="composer-input" id="composer" placeholder="输入消息" autocomplete="off" />
+            <button type="button" class="icon-round" id="btn-plus" title="上传发票" aria-label="上传发票">
+              <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            </button>
+            <input type="file" id="fileInvoice" class="hidden-file" accept="image/*" />
+          </div>
+        </div>
+      </section>
+
+      <aside class="right-col">
+        <div class="card">
+          <h3>待办提醒</h3>
+          <ul class="todo-checklist" id="todoChecklist">
+            <li class="todo-check-item done"><span class="todo-dot"></span><span class="todo-text">补充 BX-202604-0089 的发票附件</span></li>
+            <li class="todo-check-item"><span class="todo-dot"></span><span class="todo-text">确认今日待预审单据 2 条</span></li>
+            <li class="todo-check-item"><span class="todo-dot"></span><span class="todo-text">处理财务驳回单 1 条</span></li>
+            <li class="todo-check-item"><span class="todo-dot"></span><span class="todo-text">跟进审批负责人未签批事项</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>常用问询</h3>
+          <ul class="ask-list" id="askList">
+            <li class="ask-item">上周我的差旅费超标了多少？</li>
+            <li class="ask-item">我近三个月的报销有没有异常？</li>
+            <li class="ask-item">如果把北京住宿标准降到 500 元，能节省多少？</li>
+            <li class="ask-item">本月违规拦截了哪些单据？</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 待处理单 -->
+    <div id="page-todo" class="page">
+      <section class="panel-main scrollable">
+        <div class="panel-head">待处理单</div>
+        <div style="padding:1rem;">
+          <div class="todo-grid" id="todoGrid">
+            <div class="todo-card">
+              <span class="tag reject">财务驳回</span>
+              <div class="title">BX-202604-0089</div>
+              <div class="meta">住宿费超标未附审批说明。请于 3 日内修改后重新提交。</div>
+              <button class="action-btn" data-action="modify" data-id="BX-202604-0089">去修改</button>
+            </div>
+            <div class="todo-card">
+              <span class="tag unknown">内容不清晰</span>
+              <div class="title">BX-202604-0091</div>
+              <div class="meta">餐饮发票事由与参与人员不完整，请补充后再次预审。</div>
+              <button class="action-btn" data-action="supplement" data-id="BX-202604-0091">去补充</button>
+            </div>
+            <div class="todo-card">
+              <span class="tag pending">待预审</span>
+              <div class="title">BX-202604-0094</div>
+              <div class="meta">新上传交通费发票，等待您确认 OCR 字段后发起一审。</div>
+              <button class="action-btn" data-action="precheck" data-id="BX-202604-0094">去预审</button>
+            </div>
+            <div class="todo-card">
+              <span class="tag pass">已通过</span>
+              <div class="title">BX-202603-0156</div>
+              <div class="meta">合规预审已通过，可进入正式报销提交流程。</div>
+              <button class="action-btn" data-action="detail" data-id="BX-202603-0156">查看详情</button>
+            </div>
+            <div class="todo-card">
+              <span class="tag reject">财务驳回</span>
+              <div class="title">BX-202602-0042</div>
+              <div class="meta">发票日期超出报销周期，需更换有效票据或说明。</div>
+              <button class="action-btn" data-action="modify" data-id="BX-202602-0042">去修改</button>
+            </div>
+            <div class="todo-card">
+              <span class="tag unknown">内容不清晰</span>
+              <div class="title">BX-202604-0098</div>
+              <div class="meta">项目编号与部门归属不一致，请核对后修改。</div>
+              <button class="action-btn" data-action="modify" data-id="BX-202604-0098">去修改</button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <aside class="right-col">
+        <div class="card"><h3>处理概览</h3><ul class="list"><li>6 条待处理，2 条需今日内处理</li></ul></div>
+        <div class="card"><h3>近期表现</h3>
+          <div class="metrics-row">
+            <div class="metric-pill ok"><span>合规通过</span><span class="val">72%</span></div>
+            <div class="metric-pill warn"><span>预警提示</span><span class="val">18%</span></div>
+            <div class="metric-pill risk"><span>风险拦截</span><span class="val">10%</span></div>
+          </div>
+          <p style="margin:0.65rem 0 0;font-size:0.9rem;color:var(--muted);">本月提交：26 单，一次通过率：88%</p>
+        </div>
+        <div class="card"><h3>风险提示</h3><ul class="list"><li>住宿超标单据本周上升 12%</li><li>附件缺失导致退回占比 18%</li></ul></div>
+      </aside>
+    </div>
+
+    <!-- 我的报销 -->
+    <div id="page-my" class="page">
+      <section class="panel-main scrollable">
+        <div class="panel-head">我的报销</div>
+        <div style="padding:1rem;">
+          <p style="margin:0 0 1rem;color:var(--muted);font-size:1rem;">近六个月内历史单据与进程（演示数据）</p>
+          <div class="filter-tabs" id="filterTabs">
+            <span class="filter-tab active" data-filter="all">全部</span>
+            <span class="filter-tab" data-filter="审核中">审核中</span>
+            <span class="filter-tab" data-filter="已通过">已通过</span>
+            <span class="filter-tab" data-filter="已驳回">已驳回</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>单号</th>
+                  <th>类型</th>
+                  <th data-sort="amount">金额 <span class="sort-arrow">↕</span></th>
+                  <th data-sort="date">提交日 <span class="sort-arrow">↕</span></th>
+                  <th>当前进度</th>
+                </tr>
+              </thead>
+              <tbody id="reimbursementsBody">
+                <tr><td colspan="5">加载中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <aside class="right-col">
+        <div class="card">
+          <h3>一键导出报销明细单</h3>
+          <div class="form-group">
+            <label>时间范围</label>
+            <select id="exportDate">
+              <option value="">全部时间</option>
+              <option value="近30天">近30天</option>
+              <option value="近90天">近90天</option>
+              <option value="近6个月">近6个月</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>报销类型</label>
+            <select id="exportType">
+              <option value="">全部类型</option>
+              <option value="差旅交通">差旅交通</option>
+              <option value="住宿">住宿</option>
+              <option value="客户招待">客户招待</option>
+              <option value="办公采购">办公采购</option>
+            </select>
+          </div>
+          <button type="button" class="small-btn primary" style="min-height:2.5rem;width:100%;" id="btn-export">一键导出</button>
+        </div>
+        <div class="card">
+          <h3>额度提示</h3>
+          <div class="safety-line">当前报销状态正常。本月已用报销额度 ¥36,420，剩余可用额度 ¥13,580。</div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 帮助反馈 -->
+    <div id="page-help" class="page">
+      <section class="panel-main">
+        <div class="panel-head">帮助反馈</div>
+        <div class="help-grid">
+          <div class="help-stack">
+            <h3 style="margin:0 0 0.75rem;font-size:1.1rem;">提交反馈</h3>
+            <div class="form-group">
+              <label>反馈类型</label>
+              <select id="feedbackType"><option>功能建议</option><option>识别错误</option><option>规则咨询</option><option>其他</option></select>
+            </div>
+            <div class="form-group">
+              <label>标题</label>
+              <input type="text" id="feedbackTitle" placeholder="简要描述问题" />
+            </div>
+            <div class="form-group">
+              <label>详细说明</label>
+              <textarea id="feedbackDetail" placeholder="请描述复现步骤或期望行为"></textarea>
+            </div>
+            <button type="button" class="small-btn primary" style="min-height:2.5rem;width:100%;" id="btn-feedback">提交反馈</button>
+          </div>
+          <div class="help-stack">
+            <h3 style="margin:0 0 0.65rem;font-size:1.05rem;">常见问题</h3>
+            <div class="faq-item" data-faq="0"><strong>预审与正式报销有什么区别？</strong><div class="faq-answer">预审是提交正式报销前的合规性自查，帮助您提前发现金额超标、附件缺失等问题，减少正式提交后的驳回率。预审通过后再提交，可大幅提升一次通过率。</div></div>
+            <div class="faq-item" data-faq="1"><strong>OCR 识别错误怎么办？</strong><div class="faq-answer">识别结果支持直接点击修改，点击对应字段值即可编辑，修改后点「确认无误」即可。如频繁出错，请通过上方反馈表单提交，我们会持续优化模型。</div></div>
+            <div class="faq-item" data-faq="2"><strong>多久能收到审核结果？</strong><div class="faq-answer">预审结果即时返回。正式报销审核时间取决于审批人处理速度，通常 1-3 个工作日。如超时未处理，系统会自动提醒审批人。</div></div>
+          </div>
+        </div>
+      </section>
+      <aside class="right-col">
+        <div class="card">
+          <h3>公司制度条款</h3>
+          <ul class="link-list">
+            <li>《差旅费用报销细则（2026版）》</li>
+            <li>《业务招待费管理办法》</li>
+            <li>《发票与凭证附件规范》</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>联系方式</h3>
+          <ul class="link-list">
+            <li>在线客服</li>
+            <li>服务时间：工作日 9:00–18:00</li>
+            <li>紧急财务专线：400-820-3699</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  var API_BASE = "/api";
+  var recognizedData = null;
+  var allReimbursements = [];
+  var currentFilter = "all";
+  var sortField = null;
+  var sortAsc = true;
+
+  function getMockReimbursements() {
+    return [
+      { id: "BX2026001", type: "差旅", amount: 2280, date: "2026-04-16", status: "审核中" },
+      { id: "BX2026002", type: "餐饮", amount: 368, date: "2026-04-12", status: "已通过" },
+      { id: "BX2026003", type: "交通", amount: 980, date: "2026-03-30", status: "已驳回" },
+      { id: "BX2026004", type: "办公", amount: 420, date: "2026-03-18", status: "已通过" },
+      { id: "BX2026005", type: "差旅", amount: 3150, date: "2026-03-05", status: "已驳回" },
+      { id: "BX2026006", type: "住宿", amount: 1600, date: "2026-02-20", status: "已通过" },
+    ];
+  }
+
+  function getMockOcrData(fileName) {
+    return {
+      date: "2026-04-28", category: "差旅费", amount: 1680,
+      description: "客户拜访产生的往返交通与住宿费用",
+      department: "销售中心", projectCode: "PRJ-2026-011",
+      approver: "李经理", applicant: "张三",
+      fileName: fileName || "invoice.png",
+    };
+  }
+
+  function getMockPrecheck(payload) {
+    var amount = Number((payload && payload.amount) || 0);
+    var category = (payload && payload.category) || "差旅费";
+    if (amount > 3000) return { result: "拦截", reason: "金额超过当前类别默认阈值", recommendation: "请补充审批说明并走特殊审批流程" };
+    if (amount > 1500) return { result: "预警", reason: "金额接近阈值上限", recommendation: "建议补充业务背景与同行程佐证" };
+    return { result: "通过", reason: category + "金额处于规则允许范围内", recommendation: "可提交财务审核" };
+  }
+
+  // Navigation
+  var navItems = document.querySelectorAll(".nav-item");
+  var pages = document.querySelectorAll(".page");
+  navItems.forEach(function (item) {
+    item.addEventListener("click", function () {
+      navItems.forEach(function (n) { n.classList.remove("active"); });
+      item.classList.add("active");
+      var id = item.getAttribute("data-page");
+      pages.forEach(function (p) { p.classList.toggle("active", p.id === id); });
+    });
+  });
+
+  // Todo checklist toggle
+  var checklist = document.getElementById("todoChecklist");
+  if (checklist) {
+    checklist.querySelectorAll(".todo-check-item").forEach(function (row) {
+      row.addEventListener("click", function () { row.classList.toggle("done"); });
+    });
+  }
+
+  // Toast helper
+  function showToast(msg) {
+    var t = document.createElement("div");
+    t.className = "toast";
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 2600);
+  }
+
+  // Chat helpers
+  var chatScroll = document.getElementById("chatScroll");
+
+  function appendAiMessage(html) {
+    if (!chatScroll) return;
+    var row = document.createElement("div");
+    row.className = "msg-row ai";
+    row.innerHTML = '<div class="bubble ai">' + html + "</div>";
+    chatScroll.appendChild(row);
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+  }
+
+  function appendThinking() {
+    if (!chatScroll) return null;
+    var row = document.createElement("div");
+    row.className = "msg-row ai";
+    row.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div>';
+    chatScroll.appendChild(row);
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+    return row;
+  }
+
+  function removeThinking(row) {
+    if (row && row.parentNode) row.parentNode.removeChild(row);
+  }
+
+  // OCR confirm → show preaudit
+  var ocrConfirmBtn = document.getElementById("btn-ocr-confirm");
+  var preauditWrap = document.getElementById("preaudit-wrap");
+  var preauditBtnWrap = document.getElementById("preaudit-btn-wrap");
+
+  if (ocrConfirmBtn) {
+    ocrConfirmBtn.addEventListener("click", function () {
+      // Read editable fields
+      var card = document.getElementById("ocrCard");
+      var fields = card.querySelectorAll(".ocr-value");
+      recognizedData = {};
+      fields.forEach(function (f) {
+        var key = f.getAttribute("data-field");
+        var val = f.textContent.trim();
+        if (key === "amount") {
+          val = parseInt(val.replace(/[^\d]/g, ""), 10) || 0;
+        }
+        recognizedData[key] = val;
+      });
+      // Disable editing
+      fields.forEach(function (f) { f.setAttribute("contenteditable", "false"); f.style.borderBottomColor = "transparent"; });
+      ocrConfirmBtn.disabled = true;
+      ocrConfirmBtn.textContent = "已确认";
+      ocrConfirmBtn.classList.remove("primary");
+      // Show preaudit
+      if (preauditWrap) preauditWrap.style.display = "flex";
+      if (preauditBtnWrap) preauditBtnWrap.style.display = "flex";
+      if (chatScroll) chatScroll.scrollTop = chatScroll.scrollHeight;
+    });
+  }
+
+  // Preaudit
+  var preauditYesBtn = document.getElementById("btn-yes");
+  if (preauditYesBtn) {
+    preauditYesBtn.addEventListener("click", async function () {
+      preauditYesBtn.disabled = true;
+      preauditYesBtn.textContent = "预审中...";
+      var thinkingRow = appendThinking();
+
+      try {
+        const resp = await fetch(API_BASE + "/precheck", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(recognizedData || { amount: 1680, category: "交通费" }),
+        });
+        const json = await resp.json();
+        removeThinking(thinkingRow);
+        showPrecheckResult(json);
+      } catch (error) {
+        removeThinking(thinkingRow);
+        var fallback = getMockPrecheck(recognizedData || { amount: 1680, category: "交通费" });
+        showPrecheckResult(fallback);
+      }
+    });
+  }
+
+  function showPrecheckResult(data) {
+    var cls = data.result === "通过" ? "pass" : data.result === "预警" ? "warn" : "block";
+    var html = '<div class="precheck-card ' + cls + '">' +
+      '<div class="pc-result">预审结果：' + data.result + '</div>' +
+      '<div class="pc-reason">' + data.reason + '</div>' +
+      '<div class="pc-advice">' + data.recommendation + '</div>' +
+      '</div>';
+    if (!chatScroll) return;
+    var row = document.createElement("div");
+    row.className = "msg-row ai";
+    row.innerHTML = html;
+    chatScroll.appendChild(row);
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+  }
+
+  // File upload
+  var fileInput = document.getElementById("fileInvoice");
+  var plusBtn = document.getElementById("btn-plus");
+  if (plusBtn && fileInput) {
+    plusBtn.addEventListener("click", function () { fileInput.click(); });
+    fileInput.addEventListener("change", async function () {
+      var f = fileInput.files && fileInput.files[0];
+      if (!f || !chatScroll) return;
+      var row = document.createElement("div");
+      row.className = "msg-row user";
+      var wrap = document.createElement("div");
+      wrap.className = "invoice-thumb";
+      wrap.innerHTML = '<div style="padding:2rem;text-align:center;color:#64748b;font-size:0.95rem;">已选择图片<br>' + f.name + "</div>";
+      row.appendChild(wrap);
+      chatScroll.appendChild(row);
+      chatScroll.scrollTop = chatScroll.scrollHeight;
+      fileInput.value = "";
+
+      var thinkingRow = appendThinking();
+      try {
+        const resp = await fetch(API_BASE + "/ocr", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName: f.name }),
+        });
+        const json = await resp.json();
+        removeThinking(thinkingRow);
+        recognizedData = json.data;
+        showOcrCard(json.data);
+      } catch (error) {
+        var fallbackOcr = getMockOcrData(f.name);
+        removeThinking(thinkingRow);
+        recognizedData = fallbackOcr;
+        showOcrCard(fallbackOcr);
+      }
+    });
+  }
+
+  function showOcrCard(data) {
+    var html = '<div class="ocr-card" id="ocrCard">' +
+      '<div class="ocr-row"><span class="ocr-label">类目：</span><span class="ocr-value" contenteditable="true" data-field="category">' + (data.category || "") + '</span></div>' +
+      '<div class="ocr-row"><span class="ocr-label">金额：</span><span class="ocr-value" contenteditable="true" data-field="amount">¥' + Number(data.amount || 0).toLocaleString("zh-CN") + '</span></div>' +
+      '<div class="ocr-row"><span class="ocr-label">审批人：</span><span class="ocr-value" contenteditable="true" data-field="approver">' + (data.approver || "") + '</span></div>' +
+      '<div class="ocr-row"><span class="ocr-label">申请者：</span><span class="ocr-value" contenteditable="true" data-field="applicant">' + (data.applicant || "") + '</span></div>' +
+      '<div class="ocr-row"><span class="ocr-label">用途：</span><span class="ocr-value" contenteditable="true" data-field="description">' + (data.description || "") + '</span></div>' +
+      '<div class="ocr-actions"><button type="button" class="small-btn primary" id="btn-ocr-confirm">确认无误</button></div>' +
+      '</div>';
+    appendAiMessage("OCR识别完成，请核对以下字段。如需修改，直接点击对应值即可编辑：");
+    var row = document.createElement("div");
+    row.className = "msg-row ai";
+    row.innerHTML = html;
+    chatScroll.appendChild(row);
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+
+    // Re-bind OCR confirm
+    var btn = document.getElementById("btn-ocr-confirm");
+    if (btn) {
+      btn.addEventListener("click", function () {
+        var card = document.getElementById("ocrCard");
+        var fields = card.querySelectorAll(".ocr-value");
+        recognizedData = {};
+        fields.forEach(function (f) {
+          var key = f.getAttribute("data-field");
+          var val = f.textContent.trim();
+          if (key === "amount") val = parseInt(val.replace(/[^\d]/g, ""), 10) || 0;
+          recognizedData[key] = val;
+        });
+        fields.forEach(function (f) { f.setAttribute("contenteditable", "false"); f.style.borderBottomColor = "transparent"; });
+        btn.disabled = true; btn.textContent = "已确认"; btn.classList.remove("primary");
+        if (preauditWrap) preauditWrap.style.display = "flex";
+        if (preauditBtnWrap) preauditBtnWrap.style.display = "flex";
+        chatScroll.scrollTop = chatScroll.scrollHeight;
+      });
+    }
+  }
+
+  // Ask list with thinking animation
+  var askItems = document.querySelectorAll("#askList .ask-item");
+  var askAnswers = {
+    "上周我的差旅费超标了多少？": "已计算：上周差旅费超标 ¥2,400，主要来自北京住宿与临时用车。",
+    "我近三个月的报销有没有异常？": "近三个月检测到 2 次风险预警：1 次附件不完整，1 次费用类别归属异常。",
+    "如果把北京住宿标准降到 500 元，能节省多少？": "按当前样本测算，月均可节省约 ¥8,000，季度约可节省 ¥24,000。",
+    "本月违规拦截了哪些单据？": "本月拦截 3 单：超标准住宿 1 单、缺少审批附件 1 单、非合规福利支出 1 单。"
+  };
+  if (askItems.length && chatScroll) {
+    askItems.forEach(function (item) {
+      item.addEventListener("click", function () {
+        var q = item.textContent.trim();
+        var userRow = document.createElement("div");
+        userRow.className = "msg-row user";
+        userRow.innerHTML = '<div class="bubble user">' + q + "</div>";
+        chatScroll.appendChild(userRow);
+
+        var thinkingRow = appendThinking();
+        setTimeout(function () {
+          removeThinking(thinkingRow);
+          var aiRow = document.createElement("div");
+          aiRow.className = "msg-row ai";
+          aiRow.innerHTML = '<div class="bubble ai">' + (askAnswers[q] || "已收到，正在为你计算。") + "</div>";
+          chatScroll.appendChild(aiRow);
+          chatScroll.scrollTop = chatScroll.scrollHeight;
+        }, 800 + Math.random() * 600);
+      });
+    });
+  }
+
+  // Todo card action buttons → switch to chat page
+  document.querySelectorAll(".todo-card .action-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var action = btn.getAttribute("data-action");
+      var id = btn.getAttribute("data-id");
+      // Switch to chat page
+      navItems.forEach(function (n) { n.classList.remove("active"); });
+      document.querySelector('[data-page="page-selfcheck"]').classList.add("active");
+      pages.forEach(function (p) { p.classList.toggle("active", p.id === "page-selfcheck"); });
+      // Add contextual message
+      var msgs = {
+        modify: "正在打开单据 " + id + " 的修改流程，请按提示修改后重新提交。",
+        supplement: "请为单据 " + id + " 补充缺失的附件或信息。",
+        precheck: "单据 " + id + " 已就绪，请确认 OCR 字段后发起预审。",
+        detail: "单据 " + id + " 已通过预审，可进入正式报销提交流程。"
+      };
+      if (msgs[action]) appendAiMessage(msgs[action]);
+    });
+  });
+
+  // Reimbursements table
+  var reimbursementsBody = document.getElementById("reimbursementsBody");
+
+  function formatCurrency(value) {
+    return "¥" + Number(value || 0).toLocaleString("zh-CN");
+  }
+
+  function statusClass(status) {
+    if (status === "审核中") return "run";
+    if (status === "已驳回") return "fail";
+    return "done";
+  }
+
+  function renderTable(data) {
+    if (!reimbursementsBody) return;
+    reimbursementsBody.innerHTML = data.map(function (item) {
+      return "<tr>" +
+        "<td>" + item.id + "</td>" +
+        "<td>" + item.type + "</td>" +
+        '<td class="amt">' + formatCurrency(item.amount) + "</td>" +
+        "<td>" + item.date + "</td>" +
+        '<td><span class="status-dot ' + statusClass(item.status) + '"></span>' + item.status + "</td>" +
+        "</tr>";
+    }).join("");
+  }
+
+  async function loadReimbursements() {
+    if (!reimbursementsBody) return;
+    try {
+      const resp = await fetch(API_BASE + "/reimbursements");
+      const json = await resp.json();
+      allReimbursements = Array.isArray(json.data) ? json.data : [];
+    } catch (e) {
+      allReimbursements = getMockReimbursements();
+    }
+    applyFilterAndSort();
+  }
+
+  function applyFilterAndSort() {
+    var data = allReimbursements.slice();
+    if (currentFilter !== "all") data = data.filter(function (d) { return d.status === currentFilter; });
+    if (sortField) {
+      data.sort(function (a, b) {
+        var va = a[sortField], vb = b[sortField];
+        if (typeof va === "string") { va = va.replace(/-/g, ""); vb = vb.replace(/-/g, ""); }
+        return sortAsc ? va - vb : vb - va;
+      });
+    }
+    renderTable(data);
+  }
+
+  // Filter tabs
+  var filterTabs = document.querySelectorAll("#filterTabs .filter-tab");
+  filterTabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      filterTabs.forEach(function (t) { t.classList.remove("active"); });
+      tab.classList.add("active");
+      currentFilter = tab.getAttribute("data-filter");
+      applyFilterAndSort();
+    });
+  });
+
+  // Sort headers
+  document.querySelectorAll("th[data-sort]").forEach(function (th) {
+    th.addEventListener("click", function () {
+      var field = th.getAttribute("data-sort");
+      if (sortField === field) { sortAsc = !sortAsc; } else { sortField = field; sortAsc = true; }
+      var arrow = sortAsc ? "↑" : "↓";
+      th.querySelector(".sort-arrow").textContent = arrow;
+      applyFilterAndSort();
+    });
+  });
+
+  // Export CSV
+  var exportBtn = document.getElementById("btn-export");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", function () {
+      var data = allReimbursements;
+      var csv = "﻿单号,类型,金额,提交日,当前进度\n";
+      data.forEach(function (item) {
+        csv += item.id + "," + item.type + "," + item.amount + "," + item.date + "," + item.status + "\n";
+      });
+      var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "报销明细.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("报销明细已导出");
+    });
+  }
+
+  // FAQ toggle
+  document.querySelectorAll(".faq-item").forEach(function (item) {
+    item.addEventListener("click", function () {
+      item.classList.toggle("open");
+    });
+  });
+
+  // Feedback submit
+  var feedbackBtn = document.getElementById("btn-feedback");
+  if (feedbackBtn) {
+    feedbackBtn.addEventListener("click", function () {
+      var title = document.getElementById("feedbackTitle").value.trim();
+      if (!title) { showToast("请填写反馈标题"); return; }
+      showToast("反馈已提交，感谢您的建议！");
+      document.getElementById("feedbackTitle").value = "";
+      document.getElementById("feedbackDetail").value = "";
+    });
+  }
+
+  // Composer enter key
+  var composer = document.getElementById("composer");
+  if (composer) {
+    composer.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        var text = composer.value.trim();
+        if (!text) return;
+        var userRow = document.createElement("div");
+        userRow.className = "msg-row user";
+        userRow.innerHTML = '<div class="bubble user">' + text + "</div>";
+        chatScroll.appendChild(userRow);
+        composer.value = "";
+
+        var thinkingRow = appendThinking();
+        setTimeout(function () {
+          removeThinking(thinkingRow);
+          appendAiMessage("已收到您的问题，正在查询相关政策与规则，请稍候...");
+        }, 600 + Math.random() * 500);
+      }
+    });
+  }
+
+  loadReimbursements();
+})();
+</script>
+</body>
+</html>
