@@ -1,1053 +1,1642 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>报销预检助手</title>
-  <style>
-    :root {
-      --bg: #e8eef8;
-      --sidebar: #0c1f3d;
-      --sidebar-end: #152a4d;
-      --primary: #2f6fec;
-      --primary-dark: #1e4fc4;
-      --text: #152238;
-      --muted: #5a6d85;
-      --border: #c8d4e8;
-      --white: #fff;
-      --risk: #dc3545;
-      --warn: #e8a317;
-      --ok: #1a9c5c;
-      --font-base: 17px;
-      --radius: 14px;
-    }
-    * { box-sizing: border-box; }
-    html { font-size: var(--font-base); }
-    body {
-      margin: 0; height: 100vh;
-      background: linear-gradient(165deg, #dfe8f5 0%, #e8eef8 40%, #eef2fa 100%);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      line-height: 1.55; overflow: hidden;
-    }
-    .app {
-      height: 100vh; display: grid;
-      grid-template-columns: minmax(260px, 17vw) 1fr;
-      max-width: 1920px; margin: 0 auto; overflow: hidden;
-    }
-    /* Sidebar */
-    .sidebar {
-      background: linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-end) 55%, #0a1830 100%);
-      color: #e8f0ff; padding: 1.1rem 1rem;
-      display: flex; flex-direction: column; gap: 0.65rem;
-      box-shadow: 4px 0 24px rgba(12,31,61,0.25);
-      position: relative; overflow: hidden;
-    }
-    .brand {
-      font-size: 1.35rem; font-weight: 800; letter-spacing: 0.02em;
-      margin-bottom: 0.35rem; line-height: 1.25;
-      padding: 0 0.3rem; display: flex; align-items: center; gap: 0.45rem;
-    }
-    .brand-mark {
-      width: 1.45rem; height: 1.45rem;
-      border-radius: 0.42rem 0.42rem 0.55rem 0.55rem;
-      background: linear-gradient(140deg, #7bb2ff 0%, #2f6fec 45%, #1e4fc4 100%);
-      position: relative; box-shadow: 0 4px 12px rgba(47,111,236,0.45);
-      flex-shrink: 0; transform: rotate(45deg);
-    }
-    .brand-mark::before {
-      content: ""; position: absolute; inset: 0.26rem;
-      border-radius: 0.25rem 0.25rem 0.4rem 0.4rem;
-      background: rgba(255,255,255,0.2);
-    }
-    .brand-mark::after {
-      content: ""; position: absolute;
-      width: 0.34rem; height: 0.62rem;
-      border: solid #fff; border-width: 0 2px 2px 0;
-      left: 0.52rem; top: 0.3rem; transform: rotate(45deg); opacity: 0.95;
-    }
-    .nav-item {
-      min-height: 2.65rem; border-radius: 10px;
-      display: flex; align-items: center; padding: 0 1rem;
-      font-size: 1.05rem; font-weight: 500;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      cursor: pointer; transition: background 0.2s, transform 0.15s;
-    }
-    .nav-item:hover { background: rgba(255,255,255,0.12); }
-    .nav-item.active {
-      background: linear-gradient(135deg, #3d7cff 0%, var(--primary-dark) 100%);
-      border-color: rgba(255,255,255,0.2); color: #fff; font-weight: 700;
-      box-shadow: 0 6px 20px rgba(47,111,236,0.35);
-    }
-    .sidebar-spacer { flex: 1; min-height: 1rem; }
-    .user-card {
-      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: var(--radius); padding: 0.85rem;
-      display: flex; align-items: center; gap: 0.75rem;
-      position: absolute; left: 1rem; right: 1rem; bottom: 1rem;
-    }
-    .avatar {
-      width: 2.5rem; height: 2.5rem; border-radius: 50%;
-      background: linear-gradient(135deg, #5b9dff, var(--primary));
-      color: #fff; font-weight: 800; display: grid; place-items: center;
-      font-size: 1.1rem; flex-shrink: 0;
-    }
-    .user-name { font-size: 1.05rem; font-weight: 700; }
-    .user-id { font-size: 0.82rem; color: #a8c4f0; margin-top: 0.15rem; }
-    /* Main */
-    .main {
-      padding: 1rem 1.15rem 1.15rem;
-      display: flex; flex-direction: column;
-      min-height: 0; height: 100vh; overflow: hidden;
-    }
-    .page {
-      display: none; flex: 1; min-height: 0; height: 100%;
-      grid-template-columns: 1fr minmax(340px, 26vw);
-      gap: 1rem; align-items: stretch; overflow: hidden;
-    }
-    .page.active { display: grid; }
-    .panel-main {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: 0 10px 40px rgba(21,34,56,0.08);
-      min-height: 0; display: flex; flex-direction: column; overflow: hidden;
-    }
-    .panel-main.scrollable { overflow-y: auto; }
-    .panel-head {
-      padding: 0.85rem 1.15rem; font-size: 1.15rem; font-weight: 800;
-      border-bottom: 1px solid var(--border);
-      background: linear-gradient(90deg, #fafcff 0%, #f4f8ff 100%);
-      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-    }
-    .head-title { font-size: 1.15rem; font-weight: 800; color: #1a2d4a; }
-    .head-metrics { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; justify-content: flex-end; }
-    .head-pill { border-radius: 999px; padding: 0.35rem 0.65rem; font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
-    .head-pill.green { background: #e6f9ef; color: #0d6b3d; border: 1px solid #b8e8cc; }
-    .head-pill.blue { background: #eaf1ff; color: #2a5088; border: 1px solid #c9daf7; }
-    .right-col {
-      display: flex; flex-direction: column; gap: 0.85rem;
-      min-height: 0; overflow-y: auto; padding-right: 0.15rem;
-    }
-    .card {
-      border-radius: var(--radius); padding: 1rem 1.1rem;
-      border: 1px solid rgba(255,255,255,0.65);
-      background: linear-gradient(145deg, #ffffff 0%, #f5f8ff 55%, #eef4ff 100%);
-      box-shadow: 0 8px 28px rgba(47,90,160,0.1);
-    }
-    .card h3 { margin: 0 0 0.65rem; font-size: 1.08rem; font-weight: 800; color: #1a2d4a; }
-    .list { margin: 0; padding-left: 1.15rem; font-size: 0.98rem; color: var(--muted); line-height: 1.75; }
-    .metrics-row { display: grid; gap: 0.55rem; }
-    .metric-pill {
-      border-radius: 10px; padding: 0.55rem 0.75rem; font-size: 0.92rem; font-weight: 700;
-      display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
-    }
-    .metric-pill.risk { background: linear-gradient(90deg, #ffe8ea 0%, #ffd6da 100%); color: #9b1c2e; border: 1px solid #f5b5bc; }
-    .metric-pill.warn { background: linear-gradient(90deg, #fff8e6 0%, #ffefc2 100%); color: #8a5a00; border: 1px solid #f0d080; }
-    .metric-pill.ok { background: linear-gradient(90deg, #e6f9ef 0%, #d2f0e0 100%); color: #0d6b3d; border: 1px solid #9ee0bc; }
-    .metric-pill .val { font-size: 1.05rem; }
-    .link-list { list-style: none; margin: 0; padding: 0; font-size: 0.98rem; }
-    .link-list li { padding: 0.35rem 0; color: var(--primary); font-weight: 600; cursor: pointer; }
-    .link-list li:hover { text-decoration: underline; }
-    .todo-checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; font-size: 0.98rem; }
-    .todo-check-item { display: flex; align-items: flex-start; gap: 0.55rem; cursor: pointer; color: var(--muted); }
-    .todo-dot {
-      width: 1rem; height: 1rem; border: 2px solid #9ab3d6; border-radius: 50%;
-      flex-shrink: 0; margin-top: 0.18rem; background: #fff;
-    }
-    .todo-check-item.done .todo-dot {
-      background: linear-gradient(135deg, var(--ok), #49c883); border-color: #49c883; position: relative;
-    }
-    .todo-check-item.done .todo-dot::after {
-      content: ""; position: absolute; width: 0.3rem; height: 0.55rem;
-      border: solid #fff; border-width: 0 2px 2px 0; left: 0.27rem; top: 0.08rem; transform: rotate(45deg);
-    }
-    .todo-check-item.done .todo-text { text-decoration: line-through; color: #9aa8bc; }
-    .ask-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
-    .ask-item {
-      padding: 0.55rem 0.7rem; border: 1px solid #d3dff2; border-radius: 9px;
-      background: #f7faff; color: #2a5088; font-size: 0.92rem; font-weight: 600; cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-    }
-    .ask-item:hover { background: #eef4ff; border-color: #b5caef; }
-    .safety-line {
-      font-size: 0.92rem; color: #395576; border-radius: 10px; padding: 0.65rem 0.75rem;
-      background: #f8fbff; border: 1px solid #d3dff2; font-weight: 700;
-    }
-    /* Chat */
-    .chat-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; background: linear-gradient(180deg, #f0f4fc 0%, #e8eef8 100%); }
-    .chat-scroll { flex: 1; overflow-y: auto; padding: 1.1rem 1.15rem; display: flex; flex-direction: column; gap: 0.85rem; }
-    .msg-row { display: flex; width: 100%; }
-    .msg-row.ai { justify-content: flex-start; }
-    .msg-row.user { justify-content: flex-end; }
-    .bubble { max-width: min(88%, 36rem); padding: 0.75rem 1rem; border-radius: 12px; font-size: 1.02rem; line-height: 1.6; }
-    .bubble.ai { background: #fff; border: 1px solid #d0ddf0; color: #1e3a5c; border-bottom-left-radius: 4px; }
-    .bubble.user { background: linear-gradient(135deg, #4a82ff 0%, var(--primary) 100%); color: #fff; border-bottom-right-radius: 4px; }
-    .invoice-thumb { width: min(360px, 72vw); border-radius: 10px; overflow: hidden; border: 1px solid #c5d4ec; box-shadow: 0 6px 20px rgba(0,0,0,0.12); background: #fff; }
-    .invoice-thumb svg { display: block; width: 100%; height: auto; }
-    .option-row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.25rem; }
-    .small-btn {
-      border: 1px solid #c5d4ec; background: #fff; color: #2a5088; border-radius: 999px;
-      min-height: 2.35rem; padding: 0 1.1rem; font-size: 0.98rem; font-weight: 700;
-      cursor: pointer; transition: 0.2s;
-    }
-    .small-btn:hover { background: #f0f5ff; }
-    .small-btn.primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #fff; border-color: transparent; }
-    .composer-bar { display: flex; align-items: center; gap: 0.65rem; padding: 0.75rem 1rem; background: #fff; border-top: 1px solid var(--border); }
-    .icon-round {
-      width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 1px solid #c5d4ec;
-      background: linear-gradient(180deg, #f7faff 0%, #eef3fb 100%);
-      display: grid; place-items: center; cursor: pointer; flex-shrink: 0; transition: 0.2s;
-    }
-    .icon-round:hover { background: #e4edff; border-color: #9bb8e8; }
-    .icon-round svg { width: 1.15rem; height: 1.15rem; fill: #35507d; }
-    .icon-round.disabled { opacity: 0.45; cursor: not-allowed; }
-    .icon-round.disabled:hover { background: linear-gradient(180deg, #f7faff 0%, #eef3fb 100%); border-color: #c5d4ec; }
-    .composer-input {
-      flex: 1; min-height: 2.75rem; border: 1px solid #c5d4ec; border-radius: 999px;
-      padding: 0 1.1rem; font-size: 1rem; outline: none; background: #f8fbff;
-    }
-    .composer-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(47,111,236,0.15); }
-    .hidden-file { display: none; }
-    /* OCR editable card */
-    .ocr-card {
-      background: #fff; border: 1px solid #d0ddf0; border-radius: 12px; padding: 1rem;
-      max-width: min(88%, 36rem); font-size: 0.98rem; line-height: 1.7;
-    }
-    .ocr-card .ocr-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
-    .ocr-card .ocr-label { color: #5a6d85; font-weight: 600; min-width: 4.5em; }
-    .ocr-card .ocr-value {
-      color: #1e3a5c; font-weight: 700; border-bottom: 1px dashed #c8d4e8; padding-bottom: 1px;
-      outline: none; min-width: 3em; transition: border-color 0.2s;
-    }
-    .ocr-card .ocr-value:focus { border-bottom-color: var(--primary); }
-    .ocr-card .ocr-actions { margin-top: 0.65rem; display: flex; gap: 0.6rem; }
-    /* Precheck result card */
-    .precheck-card {
-      border-radius: 12px; padding: 1rem; max-width: min(88%, 36rem);
-      font-size: 0.98rem; line-height: 1.7;
-    }
-    .precheck-card.pass { background: #e6f9ef; border: 2px solid #49c883; }
-    .precheck-card.warn { background: #fff8e6; border: 2px solid #f0d080; }
-    .precheck-card.block { background: #ffe8ea; border: 2px solid #f5b5bc; }
-    .precheck-card .pc-result { font-weight: 800; font-size: 1.1rem; margin-bottom: 0.3rem; }
-    .precheck-card.pass .pc-result { color: #0d6b3d; }
-    .precheck-card.warn .pc-result { color: #8a5a00; }
-    .precheck-card.block .pc-result { color: #9b1c2e; }
-    .precheck-card .pc-reason { color: #395576; margin-bottom: 0.3rem; }
-    .precheck-card .pc-advice { color: #1a2d4a; font-weight: 700; }
-    /* Thinking dots */
-    .thinking-dots { display: flex; gap: 0.3rem; padding: 0.75rem 1rem; }
-    .thinking-dots span {
-      width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #9ab3d6;
-      animation: blink 1.4s infinite both;
-    }
-    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes blink { 0%,80%,100%{opacity:0.3} 40%{opacity:1} }
-    /* Todo page */
-    .todo-grid { display: flex; flex-direction: column; gap: 0.75rem; }
-    .todo-card {
-      border-radius: 12px; padding: 1rem; border: 1px solid var(--border);
-      background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.04); width: 100%;
-      position: relative;
-    }
-    .todo-card .tag { display: inline-block; font-size: 0.82rem; font-weight: 800; padding: 0.25rem 0.55rem; border-radius: 6px; margin-bottom: 0.5rem; }
-    .tag.reject { background: #ffe8ea; color: #b02a37; }
-    .tag.pass { background: #e6f9ef; color: #0d6b3d; }
-    .tag.unknown { background: #fff4e0; color: #8a5a00; }
-    .tag.pending { background: #eaf1ff; color: #2a5088; }
-    .todo-card .title { font-weight: 800; font-size: 1.05rem; margin-bottom: 0.35rem; }
-    .todo-card .meta { font-size: 0.92rem; color: var(--muted); line-height: 1.55; }
-    .todo-card .action-btn {
-      margin-top: 0.65rem; display: inline-block; border: 1px solid var(--primary);
-      color: var(--primary); border-radius: 999px; padding: 0.3rem 0.85rem;
-      font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s;
-      background: transparent;
-    }
-    .todo-card .action-btn:hover { background: var(--primary); color: #fff; }
-    /* Table */
-    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.98rem; background: #fff; }
-    th, td { padding: 0.75rem 0.85rem; text-align: left; border-bottom: 1px solid #e4ebf5; }
-    th {
-      background: linear-gradient(180deg, #f4f8ff 0%, #eef3fb 100%);
-      font-weight: 800; color: #1a2d4a; font-size: 0.95rem; cursor: pointer; user-select: none;
-    }
-    th:hover { color: var(--primary); }
-    th .sort-arrow { font-size: 0.7rem; margin-left: 0.2rem; }
-    tr:hover td { background: #fafcff; }
-    .amt { font-weight: 800; color: #1e4fc4; }
-    .status-dot { display: inline-block; width: 0.45rem; height: 0.45rem; border-radius: 50%; margin-right: 0.35rem; vertical-align: middle; }
-    .status-dot.done { background: var(--ok); }
-    .status-dot.run { background: var(--warn); }
-    .status-dot.fail { background: var(--risk); }
-    /* Filter tabs */
-    .filter-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-    .filter-tab {
-      padding: 0.4rem 0.85rem; border-radius: 999px; font-size: 0.9rem; font-weight: 600;
-      cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--muted); transition: 0.2s;
-    }
-    .filter-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-    .filter-tab:hover:not(.active) { background: #f0f5ff; }
-    /* Help */
-    .help-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; padding: 1rem; }
-    .help-stack { padding: 0 1rem 1rem; display: grid; gap: 0.85rem; }
-    .faq-item {
-      border: 1px solid var(--border); border-radius: 10px; padding: 0.55rem 0.7rem;
-      margin-bottom: 0.45rem; background: #fafcff; cursor: pointer; transition: background 0.2s;
-    }
-    .faq-item:hover { background: #eef4ff; }
-    .faq-item strong { display: block; margin-bottom: 0; color: #1a2d4a; }
-    .faq-answer { display: none; margin-top: 0.4rem; color: var(--muted); font-size: 0.92rem; line-height: 1.6; }
-    .faq-item.open .faq-answer { display: block; }
-    .form-group { margin-bottom: 0.75rem; }
-    .form-group label { display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.35rem; color: #2a5088; }
-    .form-group input, .form-group textarea, .form-group select {
-      width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;
-    }
-    .form-group textarea { min-height: 100px; resize: vertical; }
-    /* Toast */
-    .toast {
-      position: fixed; top: 1.5rem; right: 1.5rem; background: #1a2d4a; color: #fff;
-      padding: 0.85rem 1.3rem; border-radius: 10px; font-size: 0.95rem; font-weight: 600;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.18); z-index: 9999;
-      animation: toastIn 0.3s ease, toastOut 0.3s ease 2.2s forwards;
-    }
-    @keyframes toastIn { from { opacity: 0; transform: translateY(-1rem); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-1rem); } }
-    /* Responsive */
-    @media (max-width: 1100px) {
-      .page.active { grid-template-columns: 1fr; }
-      .right-col { flex-direction: row; flex-wrap: wrap; }
-      .right-col .card { flex: 1 1 45%; min-width: 260px; }
-    }
-    @media (max-width: 720px) {
-      .app { grid-template-columns: 1fr; }
-      .sidebar { flex-direction: row; flex-wrap: wrap; align-items: center; padding: 0.6rem; gap: 0.4rem; }
-      .brand { width: 100%; font-size: 1.1rem; }
-      .nav-item { flex: 1 1 40%; justify-content: center; font-size: 0.9rem; min-height: 2.2rem; padding: 0 0.6rem; }
-      .sidebar-spacer { display: none; }
-      .user-card { width: 100%; position: static; }
-      .main { padding: 0.5rem; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>费用报销智能问答及预审助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--primary:#2f6fec;--primary-light:#5a94f4;--primary-dark:#1d4fa8;--sidebar-bg:linear-gradient(180deg,#0c1f3d 0%,#143060 100%);--sidebar-w:240px;--bg:#f4f6fa;--card-bg:#fff;--text:#222;--text-secondary:#666;--border:#e2e8f0;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--blue:#3b82f6;--orange:#f97316;--shadow:0 2px 12px rgba(0,0,0,.08);--radius:8px;}
+body{font-family:'Microsoft YaHei','PingFang SC','Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden;}
+.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--sidebar-bg);color:#fff;display:flex;flex-direction:column;position:relative;z-index:100;transition:transform .3s;}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;}
+.sidebar-logo .icon{width:36px;height:36px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.sidebar-logo h1{font-size:15px;font-weight:600;line-height:1.3;}
+.sidebar-logo h1 small{display:block;font-size:11px;font-weight:400;opacity:.7;margin-top:2px;}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;cursor:pointer;transition:all .2s;font-size:14px;color:rgba(255,255,255,.7);border-left:3px solid transparent;position:relative;}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff;}
+.nav-item.active{background:rgba(47,111,236,.25);color:#fff;border-left-color:var(--primary-light);}
+.nav-item .nav-icon{width:20px;text-align:center;font-size:16px;}
+.nav-item .badge{position:absolute;right:16px;background:var(--red);color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center;}
+.sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);font-size:12px;opacity:.6;}
+.main{flex:1;display:flex;flex-direction:column;position:relative;overflow:hidden;min-width:0;min-height:0;}
+.main-header{height:56px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;}
+.main-header h2{font-size:17px;font-weight:600;}
+.api-config-btn{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s;position:relative;}
+.api-config-btn:hover{border-color:var(--primary);color:var(--primary);}
+.api-config-btn.configured{border-color:var(--green);color:var(--green);}
+.api-config-btn.configured::after{content:'';position:absolute;top:-2px;right:-2px;width:10px;height:10px;background:var(--green);border-radius:50%;border:2px solid #fff;}
+.page-content{flex:1;overflow-y:auto;padding:20px 24px;min-height:0;}
+.page{display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden;}
+.page.active{display:flex;flex-direction:column;}
+.chat-container{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
+.chat-messages{flex:1;overflow-y:auto;padding:16px 20px;min-height:0;}
+.chat-msg{display:flex;gap:10px;margin-bottom:16px;max-width:820px;}
+.chat-msg.bot{align-self:flex-start;}
+.chat-msg.user{align-self:flex-end;flex-direction:row-reverse;}
+.chat-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.chat-msg.bot .chat-avatar{background:var(--primary);color:#fff;}
+.chat-msg.user .chat-avatar{background:#e2e8f0;color:var(--text);}
+.chat-bubble{max-width:700px;padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.6;position:relative;}
+.chat-msg.bot .chat-bubble{background:#fff;border:1px solid var(--border);border-top-left-radius:2px;box-shadow:var(--shadow);}
+.chat-msg.user .chat-bubble{background:var(--primary);color:#fff;border-top-right-radius:2px;}
+.chat-input-area{background:#fff;border-top:1px solid var(--border);padding:12px 20px;display:flex;gap:10px;align-items:flex-end;flex-shrink:0;}
+.chat-input-area textarea{flex:1;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;resize:none;min-height:40px;max-height:120px;outline:none;transition:border-color .2s;}
+.chat-input-area textarea:focus{border-color:var(--primary);}
+.chat-input-area button{height:40px;padding:0 16px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit;transition:all .2s;}
+.btn-send{background:var(--primary);color:#fff;}
+.btn-send:hover{background:var(--primary-dark);}
+.btn-upload{background:#f1f5f9;color:var(--text);font-size:16px;width:40px;padding:0;display:flex;align-items:center;justify-content:center;}
+.btn-upload:hover{background:#e2e8f0;}
+.ocr-card,.attachment-card,.precheck-card,.closure-card,.note-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:8px;box-shadow:var(--shadow);}
+.ocr-card h4,.attachment-card h4,.precheck-card h4,.closure-card h4,.note-card h4{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.field-layer{margin-bottom:12px;}
+.field-layer-title{font-size:13px;font-weight:600;color:var(--primary);margin-bottom:6px;padding:4px 8px;background:#eff6ff;border-radius:4px;}
+.field-row{display:flex;align-items:center;gap:8px;padding:5px 8px;font-size:13px;border-bottom:1px solid #f1f5f9;}
+.field-row:last-child{border-bottom:none;}
+.field-label{width:130px;color:var(--text-secondary);flex-shrink:0;}
+.field-value{flex:1;font-weight:500;}
+.field-value input{border:1px solid var(--border);border-radius:4px;padding:2px 6px;width:100%;font-size:13px;font-family:inherit;}
+.field-value input:focus{border-color:var(--primary);outline:none;}
+.field-confidence{width:50px;text-align:center;font-size:12px;font-weight:600;border-radius:4px;padding:2px 4px;}
+.conf-high{background:#dcfce7;color:#15803d;}
+.conf-mid{background:#fef3c7;color:#b45309;}
+.conf-low{background:#fef2f2;color:#dc2626;}
+.field-status{width:80px;text-align:center;font-size:11px;padding:2px 6px;border-radius:4px;font-weight:500;}
+.status-pass{background:#dcfce7;color:#15803d;}
+.status-remind{background:#fef3c7;color:#b45309;}
+.status-confirm{background:#fef2f2;color:#dc2626;}
+.status-edited{background:#dbeafe;color:#1d4ed8;}
+.attach-item{display:flex;align-items:center;gap:8px;padding:8px;font-size:13px;border-bottom:1px solid #f1f5f9;}
+.attach-item:last-child{border-bottom:none;}
+.attach-name{width:150px;font-weight:500;}
+.attach-status{width:70px;text-align:center;font-size:12px;padding:2px 6px;border-radius:4px;}
+.attach-required{width:50px;text-align:center;font-size:12px;color:var(--red);}
+.attach-reason{flex:1;color:var(--text-secondary);font-size:12px;}
+.attach-action{font-size:12px;color:var(--primary);cursor:pointer;white-space:nowrap;}
+.attach-action:hover{text-decoration:underline;}
+.precheck-summary{display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;}
+.precheck-summary .summary-item{background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:10px 16px;text-align:center;min-width:100px;}
+.precheck-summary .summary-label{font-size:11px;color:var(--text-secondary);margin-bottom:4px;}
+.precheck-summary .summary-value{font-size:18px;font-weight:700;}
+.result-pass{color:var(--green);}
+.result-warn{color:var(--yellow);}
+.result-block{color:var(--red);}
+.result-info{color:var(--blue);}
+.rule-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+.rule-table th{background:#f1f5f9;padding:8px 6px;text-align:left;font-weight:600;border:1px solid var(--border);}
+.rule-table td{padding:7px 6px;border:1px solid var(--border);vertical-align:top;}
+.rule-status{display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;}
+.closure-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.closure-actions button{padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-family:inherit;transition:all .2s;}
+.closure-actions button:hover{background:#f1f5f9;}
+.closure-actions button.primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+.closure-actions button.primary:hover{background:var(--primary-dark);}
+.note-textarea{width:100%;min-height:120px;border:1px solid var(--border);border-radius:6px;padding:10px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.6;}
+.note-textarea:focus{border-color:var(--primary);outline:none;}
+.note-mark{font-size:11px;color:var(--orange);margin-top:4px;font-style:italic;}
+.qa-path{font-size:11px;color:var(--text-secondary);margin-top:6px;padding:6px 10px;background:#f8fafc;border-radius:4px;border-left:3px solid var(--primary);}
+.todo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+.todo-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow);}
+.todo-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.12);transform:translateY(-1px);}
+.todo-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.todo-card-title{font-size:14px;font-weight:600;}
+.todo-card .status-tag{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;}
+.todo-card-body{font-size:13px;color:var(--text-secondary);line-height:1.8;}
+.todo-card-footer{margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-secondary);}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:#fff;border-radius:12px;width:90%;max-width:700px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-header h3{font-size:16px;font-weight:600;}
+.modal-close{width:32px;height:32px;border:none;background:none;font-size:20px;cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{background:#f1f5f9;}
+.modal-body{padding:20px;}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text-secondary);}
+.form-group input,.form-group select,.form-group textarea{width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary);}
+.btn{padding:8px 18px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-family:inherit;transition:all .2s;}
+.btn:hover{background:#f1f5f9;}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+.btn-primary:hover{background:var(--primary-dark);}
+.btn-danger{color:var(--red);border-color:var(--red);}
+.btn-danger:hover{background:#fef2f2;}
+.reimb-table-wrap{overflow-x:auto;}
+.reimb-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+.reimb-table th{background:#f1f5f9;padding:10px 8px;text-align:left;font-weight:600;border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;}
+.reimb-table th:hover{background:#e2e8f0;}
+.reimb-table th .sort-arrow{margin-left:4px;font-size:10px;opacity:.5;}
+.reimb-table td{padding:9px 8px;border-bottom:1px solid var(--border);}
+.reimb-table tr:hover td{background:#f8fafc;}
+.table-filters{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.table-filters input,.table-filters select{border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none;}
+.table-filters input:focus,.table-filters select:focus{border-color:var(--primary);}
+.arch-page{background:#0a1628;flex:1;padding:30px 20px;color:#fff;overflow-y:auto;min-height:0;}
+.arch-title{text-align:center;font-size:20px;font-weight:700;margin-bottom:30px;background:linear-gradient(90deg,#5a94f4,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.arch-rows{display:flex;flex-direction:column;gap:20px;max-width:1100px;margin:0 auto;}
+.arch-row{display:flex;align-items:flex-start;gap:12px;}
+.arch-row-label{width:80px;flex-shrink:0;font-size:13px;font-weight:700;padding:12px 0;text-align:right;color:var(--primary-light);}
+.arch-row-cards{display:flex;flex-wrap:wrap;gap:10px;flex:1;}
+.arch-card{background:linear-gradient(135deg,#1a2d50,#0f1f3a);border:1px solid rgba(90,148,244,.3);border-radius:8px;padding:10px 14px;font-size:12px;text-align:center;min-width:90px;transition:all .3s;}
+.arch-card:hover{border-color:var(--primary-light);background:linear-gradient(135deg,#1e3560,#132845);transform:translateY(-2px);}
+.arch-card .card-icon{font-size:18px;margin-bottom:4px;}
+.arch-card .card-label{font-size:11px;opacity:.9;line-height:1.3;}
+.arch-arrows{display:flex;justify-content:center;max-width:1100px;margin:0 auto;}
+.arch-arrow-line{flex:1;height:20px;position:relative;}
+.arch-arrow-line::after{content:'\25BC';position:absolute;bottom:0;left:50%;transform:translateX(-50%);color:rgba(90,148,244,.5);font-size:10px;}
+.arch-row.ai .arch-card{border-color:rgba(168,85,247,.4);background:linear-gradient(135deg,#1a1a3d,#150f2e);}
+.arch-row.ai .arch-card:hover{border-color:#a855f7;}
+.arch-row.backend .arch-card{border-color:rgba(34,197,94,.3);background:linear-gradient(135deg,#0f2a1a,#0a1f12);}
+.arch-row.backend .arch-card:hover{border-color:#22c55e;}
+.arch-row.infra .arch-card{border-color:rgba(249,115,22,.3);background:linear-gradient(135deg,#2a1a0f,#1f120a);}
+.arch-row.infra .arch-card:hover{border-color:#f97316;}
+.faq-item{background:#fff;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;}
+.faq-q{padding:14px 16px;font-size:14px;font-weight:500;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;}
+.faq-q:hover{background:#f8fafc;}
+.faq-q .arrow{transition:transform .2s;font-size:12px;}
+.faq-q.open .arrow{transform:rotate(180deg);}
+.faq-a{padding:0 16px;max-height:0;overflow:hidden;transition:all .3s;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.faq-a.open{padding:12px 16px;max-height:600px;}
+.policy-item{background:#fff;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;}
+.policy-header{padding:14px 16px;font-size:14px;font-weight:500;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+.policy-header:hover{background:#f8fafc;}
+.policy-tag{font-size:10px;background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;margin-left:8px;}
+.policy-body{padding:0 16px;max-height:0;overflow:hidden;transition:all .3s;font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.policy-body.open{padding:12px 16px;max-height:800px;}
+.policy-body ul{padding-left:18px;margin-top:6px;}
+.policy-body li{margin-bottom:4px;}
+.toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast{padding:12px 20px;border-radius:8px;font-size:13px;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.2);animation:toastIn .3s;max-width:400px;}
+.toast.success{background:var(--green);}
+.toast.error{background:var(--red);}
+.toast.warning{background:var(--yellow);color:#333;}
+.toast.info{background:var(--primary);}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
+.quick-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.quick-btn{padding:6px 14px;border-radius:16px;border:1px solid var(--primary);color:var(--primary);background:#fff;cursor:pointer;font-size:12px;font-family:inherit;transition:all .2s;}
+.quick-btn:hover{background:var(--primary);color:#fff;}
+.step-indicator{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap;}
+.step-dot{padding:4px 10px;border-radius:12px;font-size:11px;background:#e2e8f0;color:var(--text-secondary);}
+.step-dot.active{background:var(--primary);color:#fff;}
+.step-dot.done{background:var(--green);color:#fff;}
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.config-field label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;}
+.config-field input{width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none;}
+.config-field input:focus{border-color:var(--primary);}
+.config-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end;flex-wrap:wrap;}
+.detail-section{margin-bottom:14px;}
+.detail-section h5{font-size:13px;font-weight:600;color:var(--primary);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+.detail-row{display:flex;gap:8px;font-size:13px;padding:3px 0;}
+.detail-row .dl{width:100px;color:var(--text-secondary);flex-shrink:0;}
+.detail-row .dv{font-weight:500;}
+@media(max-width:1100px){.sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:200;}.sidebar.open{transform:translateX(0);}.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:150;}.sidebar-overlay.show{display:block;}.menu-toggle{display:flex!important;}}
+@media(max-width:720px){.page-content{padding:12px;}.todo-grid{grid-template-columns:1fr;}.table-filters{flex-direction:column;}.arch-row-label{width:50px;font-size:11px;}.arch-card{min-width:70px;padding:8px 10px;}.chat-bubble{max-width:90vw;}.modal{width:95%;max-width:none;}.config-grid{grid-template-columns:1fr;}.field-label{width:100px;font-size:12px;}.field-status{width:60px;font-size:10px;}}
+.menu-toggle{display:none;width:36px;height:36px;border:none;background:none;font-size:20px;cursor:pointer;align-items:center;justify-content:center;}
+</style>
 </head>
 <body>
-<div class="app">
-  <nav class="sidebar">
-    <div class="brand"><span class="brand-mark"></span>报销预检助手</div>
-    <div class="nav-item active" data-page="page-selfcheck">智能对话</div>
-    <div class="nav-item" data-page="page-todo">待处理单</div>
-    <div class="nav-item" data-page="page-my">我的报销</div>
-    <div class="nav-item" data-page="page-help">帮助反馈</div>
-    <div class="sidebar-spacer"></div>
-    <div class="user-card">
-      <div class="avatar">张</div>
-      <div><div class="user-name">张三</div><div class="user-id">EMP-20260428</div></div>
-    </div>
-  </nav>
 
-  <main class="main">
-    <!-- 智能对话 -->
-    <div id="page-selfcheck" class="page active">
-      <section class="panel-main">
-        <div class="panel-head">
-          <div class="head-title">智能对话</div>
-          <div class="head-metrics">
-            <span class="head-pill green">本月驳回率 9.8%</span>
-            <span class="head-pill blue">平均审核时长 2.1 分钟</span>
-          </div>
-        </div>
-        <div class="chat-wrap">
-          <div class="chat-scroll" id="chatScroll">
-            <div class="msg-row user">
-              <div class="invoice-thumb" title="用户上传的发票">
-                <svg viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="420" height="260" fill="#f1f5fb"/>
-                  <rect x="14" y="14" width="392" height="232" rx="8" fill="#ffffff" stroke="#d1ddea"/>
-                  <text x="30" y="38" font-size="13" fill="#64748b">增值税电子普通发票（样例）</text>
-                  <text x="30" y="64" font-size="24" font-weight="bold" fill="#0f172a">¥ 1,680.00</text>
-                  <text x="30" y="90" font-size="11" fill="#64748b">开票日期：2026-04-28</text>
-                  <text x="30" y="110" font-size="11" fill="#64748b">购方：上海某某科技有限公司</text>
-                  <text x="30" y="130" font-size="11" fill="#64748b">项目：现代服务 / 交通费</text>
-                  <line x1="26" y1="144" x2="394" y2="144" stroke="#e2e8f0"/>
-                  <text x="30" y="166" font-size="11" fill="#334155">价税合计（大写）：壹仟陆佰捌拾元整</text>
-                  <text x="30" y="186" font-size="11" fill="#334155">发票号码：13456789</text>
-                  <text x="30" y="206" font-size="11" fill="#334155">校验码：0168 5623 9041 7783</text>
-                  <rect x="290" y="156" width="98" height="74" fill="#f8fafc" stroke="#d8e2ef"/>
-                  <text x="306" y="196" font-size="10" fill="#94a3b8">二维码</text>
-                </svg>
-              </div>
-            </div>
-            <div class="msg-row ai">
-              <div class="bubble ai">已识别发票信息，请核对以下字段。如需修改，直接点击对应值即可编辑：</div>
-            </div>
-            <div class="msg-row ai" id="ocr-card-row">
-              <div class="ocr-card" id="ocrCard">
-                <div class="ocr-row"><span class="ocr-label">类目：</span><span class="ocr-value" contenteditable="true" data-field="category">差旅费</span></div>
-                <div class="ocr-row"><span class="ocr-label">金额：</span><span class="ocr-value" contenteditable="true" data-field="amount">¥1,680</span></div>
-                <div class="ocr-row"><span class="ocr-label">审批人：</span><span class="ocr-value" contenteditable="true" data-field="approver">李经理</span></div>
-                <div class="ocr-row"><span class="ocr-label">申请者：</span><span class="ocr-value" contenteditable="true" data-field="applicant">张三</span></div>
-                <div class="ocr-row"><span class="ocr-label">用途：</span><span class="ocr-value" contenteditable="true" data-field="description">客户拜访往返交通</span></div>
-                <div class="ocr-actions">
-                  <button type="button" class="small-btn primary" id="btn-ocr-confirm">确认无误</button>
-                </div>
-              </div>
-            </div>
-            <div class="msg-row ai" id="preaudit-wrap" style="display:none;">
-              <div class="bubble ai">信息确认完成，是否进行合规预审？</div>
-            </div>
-            <div class="msg-row ai" id="preaudit-btn-wrap" style="display:none;">
-              <div class="bubble ai" style="border:none;background:transparent;padding-left:0;">
-                <button type="button" class="small-btn primary" id="btn-yes">开始预审</button>
-              </div>
-            </div>
-            <div class="msg-row user">
-              <div class="bubble user">客户招待买了水果礼盒，能报吗？</div>
-            </div>
-            <div class="msg-row ai">
-              <div class="bubble ai">根据《业务招待费用管理规定》第 6 条，可以报销。请上传金额与发票。</div>
-            </div>
-            <div class="msg-row user">
-              <div class="bubble user">周末和同事聚餐这笔能报吗？</div>
-            </div>
-            <div class="msg-row ai">
-              <div class="bubble ai">根据《员工福利与招待费用规定》第 4 条，此项不可以报销。</div>
-            </div>
-          </div>
-          <div class="composer-bar">
-            <button type="button" class="icon-round disabled" id="btn-mic" title="即将上线" aria-label="语音输入">
-              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V20H9v2h6v-2h-2v-2.08A7 7 0 0 0 19 11h-2z"/></svg>
-            </button>
-            <input type="text" class="composer-input" id="composer" placeholder="输入消息" autocomplete="off" />
-            <button type="button" class="icon-round" id="btn-plus" title="上传发票" aria-label="上传发票">
-              <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-            </button>
-            <input type="file" id="fileInvoice" class="hidden-file" accept="image/*" />
-          </div>
-        </div>
-      </section>
+<div class="toast-container" id="toastContainer"></div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-      <aside class="right-col">
-        <div class="card">
-          <h3>待办提醒</h3>
-          <ul class="todo-checklist" id="todoChecklist">
-            <li class="todo-check-item done"><span class="todo-dot"></span><span class="todo-text">补充 BX-202604-0089 的发票附件</span></li>
-            <li class="todo-check-item"><span class="todo-dot"></span><span class="todo-text">确认今日待预审单据 2 条</span></li>
-            <li class="todo-check-item"><span class="todo-dot"></span><span class="todo-text">处理财务驳回单 1 条</span></li>
-            <li class="todo-check-item"><span class="todo-dot"></span><span class="todo-text">跟进审批负责人未签批事项</span></li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>常用问询</h3>
-          <ul class="ask-list" id="askList">
-            <li class="ask-item">上周我的差旅费超标了多少？</li>
-            <li class="ask-item">我近三个月的报销有没有异常？</li>
-            <li class="ask-item">如果把北京住宿标准降到 500 元，能节省多少？</li>
-            <li class="ask-item">本月违规拦截了哪些单据？</li>
-          </ul>
-        </div>
-      </aside>
-    </div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon">💰</div>
+    <h1>费用报销助手<small>智能问答 · 预审闭环</small></h1>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-item active" data-page="chat" onclick="switchPage('chat')"><span class="nav-icon">💬</span>智能对话</div>
+    <div class="nav-item" data-page="todo" onclick="switchPage('todo')"><span class="nav-icon">📋</span>待处理单<span class="badge" id="todoBadge">3</span></div>
+    <div class="nav-item" data-page="reimb" onclick="switchPage('reimb')"><span class="nav-icon">📊</span>我的报销</div>
+    <div class="nav-item" data-page="arch" onclick="switchPage('arch')"><span class="nav-icon">🏗️</span>产品架构</div>
+    <div class="nav-item" data-page="help" onclick="switchPage('help')"><span class="nav-icon">❓</span>帮助反馈</div>
+  </div>
+  <div class="sidebar-footer">v2.0 · 费用报销智能助手</div>
+</div>
 
-    <!-- 待处理单 -->
-    <div id="page-todo" class="page">
-      <section class="panel-main scrollable">
-        <div class="panel-head">待处理单</div>
-        <div style="padding:1rem;">
-          <div class="todo-grid" id="todoGrid">
-            <div class="todo-card">
-              <span class="tag reject">财务驳回</span>
-              <div class="title">BX-202604-0089</div>
-              <div class="meta">住宿费超标未附审批说明。请于 3 日内修改后重新提交。</div>
-              <button class="action-btn" data-action="modify" data-id="BX-202604-0089">去修改</button>
-            </div>
-            <div class="todo-card">
-              <span class="tag unknown">内容不清晰</span>
-              <div class="title">BX-202604-0091</div>
-              <div class="meta">餐饮发票事由与参与人员不完整，请补充后再次预审。</div>
-              <button class="action-btn" data-action="supplement" data-id="BX-202604-0091">去补充</button>
-            </div>
-            <div class="todo-card">
-              <span class="tag pending">待预审</span>
-              <div class="title">BX-202604-0094</div>
-              <div class="meta">新上传交通费发票，等待您确认 OCR 字段后发起一审。</div>
-              <button class="action-btn" data-action="precheck" data-id="BX-202604-0094">去预审</button>
-            </div>
-            <div class="todo-card">
-              <span class="tag pass">已通过</span>
-              <div class="title">BX-202603-0156</div>
-              <div class="meta">合规预审已通过，可进入正式报销提交流程。</div>
-              <button class="action-btn" data-action="detail" data-id="BX-202603-0156">查看详情</button>
-            </div>
-            <div class="todo-card">
-              <span class="tag reject">财务驳回</span>
-              <div class="title">BX-202602-0042</div>
-              <div class="meta">发票日期超出报销周期，需更换有效票据或说明。</div>
-              <button class="action-btn" data-action="modify" data-id="BX-202602-0042">去修改</button>
-            </div>
-            <div class="todo-card">
-              <span class="tag unknown">内容不清晰</span>
-              <div class="title">BX-202604-0098</div>
-              <div class="meta">项目编号与部门归属不一致，请核对后修改。</div>
-              <button class="action-btn" data-action="modify" data-id="BX-202604-0098">去修改</button>
-            </div>
-          </div>
-        </div>
-      </section>
-      <aside class="right-col">
-        <div class="card"><h3>处理概览</h3><ul class="list"><li>6 条待处理，2 条需今日内处理</li></ul></div>
-        <div class="card"><h3>近期表现</h3>
-          <div class="metrics-row">
-            <div class="metric-pill ok"><span>合规通过</span><span class="val">72%</span></div>
-            <div class="metric-pill warn"><span>预警提示</span><span class="val">18%</span></div>
-            <div class="metric-pill risk"><span>风险拦截</span><span class="val">10%</span></div>
-          </div>
-          <p style="margin:0.65rem 0 0;font-size:0.9rem;color:var(--muted);">本月提交：26 单，一次通过率：88%</p>
-        </div>
-        <div class="card"><h3>风险提示</h3><ul class="list"><li>住宿超标单据本周上升 12%</li><li>附件缺失导致退回占比 18%</li></ul></div>
-      </aside>
+<div class="main">
+  <div class="main-header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+      <h2 id="pageTitle">智能对话</h2>
     </div>
+    <button class="api-config-btn" id="apiConfigBtn" onclick="openConfigModal()" title="API 配置">⚙</button>
+  </div>
 
-    <!-- 我的报销 -->
-    <div id="page-my" class="page">
-      <section class="panel-main scrollable">
-        <div class="panel-head">我的报销</div>
-        <div style="padding:1rem;">
-          <p style="margin:0 0 1rem;color:var(--muted);font-size:1rem;">近六个月内历史单据与进程（演示数据）</p>
-          <div class="filter-tabs" id="filterTabs">
-            <span class="filter-tab active" data-filter="all">全部</span>
-            <span class="filter-tab" data-filter="审核中">审核中</span>
-            <span class="filter-tab" data-filter="已通过">已通过</span>
-            <span class="filter-tab" data-filter="已驳回">已驳回</span>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>单号</th>
-                  <th>类型</th>
-                  <th data-sort="amount">金额 <span class="sort-arrow">↕</span></th>
-                  <th data-sort="date">提交日 <span class="sort-arrow">↕</span></th>
-                  <th>当前进度</th>
-                </tr>
-              </thead>
-              <tbody id="reimbursementsBody">
-                <tr><td colspan="5">加载中...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-      <aside class="right-col">
-        <div class="card">
-          <h3>一键导出报销明细单</h3>
-          <div class="form-group">
-            <label>时间范围</label>
-            <select id="exportDate">
-              <option value="">全部时间</option>
-              <option value="近30天">近30天</option>
-              <option value="近90天">近90天</option>
-              <option value="近6个月">近6个月</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>报销类型</label>
-            <select id="exportType">
-              <option value="">全部类型</option>
-              <option value="差旅交通">差旅交通</option>
-              <option value="住宿">住宿</option>
-              <option value="客户招待">客户招待</option>
-              <option value="办公采购">办公采购</option>
-            </select>
-          </div>
-          <button type="button" class="small-btn primary" style="min-height:2.5rem;width:100%;" id="btn-export">一键导出</button>
-        </div>
-        <div class="card">
-          <h3>额度提示</h3>
-          <div class="safety-line">当前报销状态正常。本月已用报销额度 ¥36,420，剩余可用额度 ¥13,580。</div>
-        </div>
-      </aside>
+  <div class="page active" id="pageChat">
+    <div class="chat-container">
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-area">
+        <button class="btn-upload" onclick="triggerUpload()" title="上传发票">📎</button>
+        <input type="file" id="fileInput" accept="image/*,.pdf" style="display:none" onchange="handleFileUpload(event)">
+        <textarea id="chatInput" placeholder="输入报销问题，或上传发票开始预审…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+        <button class="btn-send" onclick="sendMessage()">发送</button>
+      </div>
     </div>
+  </div>
 
-    <!-- 帮助反馈 -->
-    <div id="page-help" class="page">
-      <section class="panel-main">
-        <div class="panel-head">帮助反馈</div>
-        <div class="help-grid">
-          <div class="help-stack">
-            <h3 style="margin:0 0 0.75rem;font-size:1.1rem;">提交反馈</h3>
-            <div class="form-group">
-              <label>反馈类型</label>
-              <select id="feedbackType"><option>功能建议</option><option>识别错误</option><option>规则咨询</option><option>其他</option></select>
-            </div>
-            <div class="form-group">
-              <label>标题</label>
-              <input type="text" id="feedbackTitle" placeholder="简要描述问题" />
-            </div>
-            <div class="form-group">
-              <label>详细说明</label>
-              <textarea id="feedbackDetail" placeholder="请描述复现步骤或期望行为"></textarea>
-            </div>
-            <button type="button" class="small-btn primary" style="min-height:2.5rem;width:100%;" id="btn-feedback">提交反馈</button>
-          </div>
-          <div class="help-stack">
-            <h3 style="margin:0 0 0.65rem;font-size:1.05rem;">常见问题</h3>
-            <div class="faq-item" data-faq="0"><strong>预审与正式报销有什么区别？</strong><div class="faq-answer">预审是提交正式报销前的合规性自查，帮助您提前发现金额超标、附件缺失等问题，减少正式提交后的驳回率。预审通过后再提交，可大幅提升一次通过率。</div></div>
-            <div class="faq-item" data-faq="1"><strong>OCR 识别错误怎么办？</strong><div class="faq-answer">识别结果支持直接点击修改，点击对应字段值即可编辑，修改后点「确认无误」即可。如频繁出错，请通过上方反馈表单提交，我们会持续优化模型。</div></div>
-            <div class="faq-item" data-faq="2"><strong>多久能收到审核结果？</strong><div class="faq-answer">预审结果即时返回。正式报销审核时间取决于审批人处理速度，通常 1-3 个工作日。如超时未处理，系统会自动提醒审批人。</div></div>
-          </div>
-        </div>
-      </section>
-      <aside class="right-col">
-        <div class="card">
-          <h3>公司制度条款</h3>
-          <ul class="link-list">
-            <li>《差旅费用报销细则（2026版）》</li>
-            <li>《业务招待费管理办法》</li>
-            <li>《发票与凭证附件规范》</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>联系方式</h3>
-          <ul class="link-list">
-            <li>在线客服</li>
-            <li>服务时间：工作日 9:00–18:00</li>
-            <li>紧急财务专线：400-820-3699</li>
-          </ul>
-        </div>
-      </aside>
+  <div class="page" id="pageTodo">
+    <div class="page-content">
+      <h3 style="margin-bottom:16px;">待处理单据</h3>
+      <div class="todo-grid" id="todoGrid"></div>
     </div>
-  </main>
+  </div>
+
+  <div class="page" id="pageReimb">
+    <div class="page-content">
+      <h3 style="margin-bottom:16px;">我的报销</h3>
+      <div class="table-filters">
+        <input type="date" id="filterDateStart" onchange="filterReimbTable()">
+        <input type="date" id="filterDateEnd" onchange="filterReimbTable()">
+        <select id="filterType" onchange="filterReimbTable()">
+          <option value="">全部类型</option>
+          <option value="差旅交通费">差旅交通费</option>
+          <option value="住宿费">住宿费</option>
+          <option value="客户招待费">客户招待费</option>
+          <option value="办公采购">办公采购</option>
+        </select>
+        <select id="filterStatus" onchange="filterReimbTable()">
+          <option value="">全部状态</option>
+          <option value="通过">通过</option>
+          <option value="预警">预警</option>
+          <option value="拦截">拦截</option>
+          <option value="信息不足">信息不足</option>
+          <option value="已驳回">已驳回</option>
+          <option value="草稿">草稿</option>
+        </select>
+        <button class="btn btn-primary" onclick="exportFilteredCSV()">导出 CSV</button>
+      </div>
+      <div class="reimb-table-wrap">
+        <table class="reimb-table" id="reimbTable">
+          <thead><tr>
+            <th onclick="sortReimbTable('id')">单号 <span class="sort-arrow">↕</span></th>
+            <th onclick="sortReimbTable('type')">费用类型 <span class="sort-arrow">↕</span></th>
+            <th onclick="sortReimbTable('amount')">金额 <span class="sort-arrow">↕</span></th>
+            <th onclick="sortReimbTable('date')">申请日期 <span class="sort-arrow">↕</span></th>
+            <th onclick="sortReimbTable('status')">状态 <span class="sort-arrow">↕</span></th>
+            <th>风险分</th>
+            <th>操作</th>
+          </tr></thead>
+          <tbody id="reimbBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="pageArch">
+    <div class="arch-page" id="archDiagram"></div>
+  </div>
+
+  <div class="page" id="pageHelp">
+    <div class="page-content">
+      <h3 style="margin-bottom:16px;">帮助与反馈</h3>
+      <div style="background:#fff;border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow);">
+        <h4 style="margin-bottom:12px;">意见反馈</h4>
+        <div class="form-group"><label>反馈类型</label><select id="feedbackType"><option value="">请选择</option><option value="bug">Bug 报告</option><option value="feature">功能建议</option><option value="complaint">使用问题</option><option value="other">其他</option></select></div>
+        <div class="form-group"><label>标题</label><input type="text" id="feedbackTitle" placeholder="简要描述您的反馈"></div>
+        <div class="form-group"><label>详细描述</label><textarea id="feedbackDetail" rows="4" placeholder="请详细描述您的问题或建议…"></textarea></div>
+        <button class="btn btn-primary" onclick="submitFeedback()">提交反馈</button>
+      </div>
+      <h4 style="margin-bottom:12px;">常见问题</h4>
+      <div id="faqList"></div>
+      <h4 style="margin:20px 0 12px;">制度文档</h4>
+      <div id="policyList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Config Modal -->
+<div class="modal-overlay" id="configModal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header"><h3>API 配置</h3><button class="modal-close" onclick="closeConfigModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="config-grid">
+        <div class="config-field"><label>LLM Base URL</label><input type="text" id="cfgLlmBaseUrl" placeholder="https://api.example.com/v1"></div>
+        <div class="config-field"><label>LLM API Key</label><input type="password" id="cfgLlmApiKey" placeholder="sk-..."></div>
+        <div class="config-field"><label>LLM Model</label><input type="text" id="cfgLlmModel" placeholder="gpt-4o-mini"></div>
+        <div class="config-field"><label>OCR API URL</label><input type="text" id="cfgOcrUrl" placeholder="https://ocr.example.com/api"></div>
+        <div class="config-field"><label>Precheck API URL</label><input type="text" id="cfgPrecheckUrl" placeholder="https://precheck.example.com/api"></div>
+        <div class="config-field"><label>Embedding API URL</label><input type="text" id="cfgEmbeddingUrl" placeholder="https://embed.example.com/api"></div>
+        <div class="config-field"><label>Vector Search API URL</label><input type="text" id="cfgVectorUrl" placeholder="https://vector.example.com/api"></div>
+        <div class="config-field"><label>Rerank API URL</label><input type="text" id="cfgRerankUrl" placeholder="https://rerank.example.com/api"></div>
+      </div>
+      <div class="config-actions">
+        <button class="btn" onclick="testApiConnection()">测试连接</button>
+        <button class="btn btn-danger" onclick="clearConfigAction()">清空配置</button>
+        <button class="btn btn-primary" onclick="saveConfigAction()">保存配置</button>
+        <button class="btn" onclick="closeConfigModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Todo Detail Modal -->
+<div class="modal-overlay" id="todoDetailModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="todoDetailTitle">单据详情</h3><button class="modal-close" onclick="closeTodoDetail()">&times;</button></div>
+    <div class="modal-body" id="todoDetailBody"></div>
+    <div class="modal-footer" id="todoDetailFooter"></div>
+  </div>
 </div>
 
 <script>
-(function () {
-  var API_BASE = "/api";
-  var recognizedData = null;
-  var allReimbursements = [];
-  var currentFilter = "all";
-  var sortField = null;
-  var sortAsc = true;
+/* ============================================================
+   GLOBAL STATE
+   ============================================================ */
+var CONFIG_KEY = "reimburse_api_config";
+var currentPage = "chat";
+var currentFlowStep = 0;
+var currentOcrData = null;
+var currentPrecheckResult = null;
+var currentExpenseType = "";
+var reimbSortKey = "date";
+var reimbSortAsc = false;
+var filteredReimbData = [];
 
-  function getMockReimbursements() {
-    return [
-      { id: "BX2026001", type: "差旅", amount: 2280, date: "2026-04-16", status: "审核中" },
-      { id: "BX2026002", type: "餐饮", amount: 368, date: "2026-04-12", status: "已通过" },
-      { id: "BX2026003", type: "交通", amount: 980, date: "2026-03-30", status: "已驳回" },
-      { id: "BX2026004", type: "办公", amount: 420, date: "2026-03-18", status: "已通过" },
-      { id: "BX2026005", type: "差旅", amount: 3150, date: "2026-03-05", status: "已驳回" },
-      { id: "BX2026006", type: "住宿", amount: 1600, date: "2026-02-20", status: "已通过" },
-    ];
+/* ============================================================
+   TOAST
+   ============================================================ */
+function showToast(msg, type) {
+  type = type || "info";
+  var c = document.getElementById("toastContainer");
+  var t = document.createElement("div");
+  t.className = "toast " + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 3500);
+}
+
+/* ============================================================
+   API CONFIG FUNCTIONS
+   ============================================================ */
+function getApiConfig() {
+  try { return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveApiConfig(cfg) { localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); }
+function clearApiConfig() { localStorage.removeItem(CONFIG_KEY); }
+function isApiConfigured(type) {
+  var cfg = getApiConfig();
+  if (type === "llm") return !!(cfg.llmBaseUrl && cfg.llmApiKey);
+  if (type === "ocr") return !!cfg.ocrUrl;
+  if (type === "precheck") return !!cfg.precheckUrl;
+  if (type === "embedding") return !!cfg.embeddingUrl;
+  if (type === "vectorSearch") return !!cfg.vectorUrl;
+  if (type === "rerank") return !!cfg.rerankUrl;
+  return false;
+}
+
+async function callConfiguredApi(type, payload) {
+  var cfg = getApiConfig();
+  var url = "";
+  if (type === "llm") url = cfg.llmBaseUrl + "/chat/completions";
+  else if (type === "ocr") url = cfg.ocrUrl;
+  else if (type === "precheck") url = cfg.precheckUrl;
+  else if (type === "embedding") url = cfg.embeddingUrl;
+  else if (type === "vectorSearch") url = cfg.vectorUrl;
+  else if (type === "rerank") url = cfg.rerankUrl;
+  if (!url) throw new Error("No URL configured for " + type);
+  var headers = { "Content-Type": "application/json" };
+  if (type === "llm" && cfg.llmApiKey) headers["Authorization"] = "Bearer " + cfg.llmApiKey;
+  try {
+    var resp = await fetch(url, { method: "POST", headers: headers, body: JSON.stringify(payload) });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    var data = await resp.json();
+    return { ok: true, data: data };
+  } catch(e) {
+    showToast("接口不可用，已切换为模拟数据", "warning");
+    throw e;
   }
+}
 
-  function getMockOcrData(fileName) {
-    return {
-      date: "2026-04-28", category: "差旅费", amount: 1680,
-      description: "客户拜访产生的往返交通与住宿费用",
-      department: "销售中心", projectCode: "PRJ-2026-011",
-      approver: "李经理", applicant: "张三",
-      fileName: fileName || "invoice.png",
-    };
-  }
-
-  function getMockPrecheck(payload) {
-    var amount = Number((payload && payload.amount) || 0);
-    var category = (payload && payload.category) || "差旅费";
-    if (amount > 3000) return { result: "拦截", reason: "金额超过当前类别默认阈值", recommendation: "请补充审批说明并走特殊审批流程" };
-    if (amount > 1500) return { result: "预警", reason: "金额接近阈值上限", recommendation: "建议补充业务背景与同行程佐证" };
-    return { result: "通过", reason: category + "金额处于规则允许范围内", recommendation: "可提交财务审核" };
-  }
-
-  // Navigation
-  var navItems = document.querySelectorAll(".nav-item");
-  var pages = document.querySelectorAll(".page");
-  navItems.forEach(function (item) {
-    item.addEventListener("click", function () {
-      navItems.forEach(function (n) { n.classList.remove("active"); });
-      item.classList.add("active");
-      var id = item.getAttribute("data-page");
-      pages.forEach(function (p) { p.classList.toggle("active", p.id === id); });
-    });
-  });
-
-  // Todo checklist toggle
-  var checklist = document.getElementById("todoChecklist");
-  if (checklist) {
-    checklist.querySelectorAll(".todo-check-item").forEach(function (row) {
-      row.addEventListener("click", function () { row.classList.toggle("done"); });
-    });
-  }
-
-  // Toast helper
-  function showToast(msg) {
-    var t = document.createElement("div");
-    t.className = "toast";
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 2600);
-  }
-
-  // Chat helpers
-  var chatScroll = document.getElementById("chatScroll");
-
-  function appendAiMessage(html) {
-    if (!chatScroll) return;
-    var row = document.createElement("div");
-    row.className = "msg-row ai";
-    row.innerHTML = '<div class="bubble ai">' + html + "</div>";
-    chatScroll.appendChild(row);
-    chatScroll.scrollTop = chatScroll.scrollHeight;
-  }
-
-  function appendThinking() {
-    if (!chatScroll) return null;
-    var row = document.createElement("div");
-    row.className = "msg-row ai";
-    row.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div>';
-    chatScroll.appendChild(row);
-    chatScroll.scrollTop = chatScroll.scrollHeight;
-    return row;
-  }
-
-  function removeThinking(row) {
-    if (row && row.parentNode) row.parentNode.removeChild(row);
-  }
-
-  // OCR confirm → show preaudit
-  var ocrConfirmBtn = document.getElementById("btn-ocr-confirm");
-  var preauditWrap = document.getElementById("preaudit-wrap");
-  var preauditBtnWrap = document.getElementById("preaudit-btn-wrap");
-
-  if (ocrConfirmBtn) {
-    ocrConfirmBtn.addEventListener("click", function () {
-      // Read editable fields
-      var card = document.getElementById("ocrCard");
-      var fields = card.querySelectorAll(".ocr-value");
-      recognizedData = {};
-      fields.forEach(function (f) {
-        var key = f.getAttribute("data-field");
-        var val = f.textContent.trim();
-        if (key === "amount") {
-          val = parseInt(val.replace(/[^\d]/g, ""), 10) || 0;
-        }
-        recognizedData[key] = val;
-      });
-      // Disable editing
-      fields.forEach(function (f) { f.setAttribute("contenteditable", "false"); f.style.borderBottomColor = "transparent"; });
-      ocrConfirmBtn.disabled = true;
-      ocrConfirmBtn.textContent = "已确认";
-      ocrConfirmBtn.classList.remove("primary");
-      // Show preaudit
-      if (preauditWrap) preauditWrap.style.display = "flex";
-      if (preauditBtnWrap) preauditBtnWrap.style.display = "flex";
-      if (chatScroll) chatScroll.scrollTop = chatScroll.scrollHeight;
-    });
-  }
-
-  // Preaudit
-  var preauditYesBtn = document.getElementById("btn-yes");
-  if (preauditYesBtn) {
-    preauditYesBtn.addEventListener("click", async function () {
-      preauditYesBtn.disabled = true;
-      preauditYesBtn.textContent = "预审中...";
-      var thinkingRow = appendThinking();
-
-      try {
-        const resp = await fetch(API_BASE + "/precheck", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(recognizedData || { amount: 1680, category: "交通费" }),
-        });
-        const json = await resp.json();
-        removeThinking(thinkingRow);
-        showPrecheckResult(json);
-      } catch (error) {
-        removeThinking(thinkingRow);
-        var fallback = getMockPrecheck(recognizedData || { amount: 1680, category: "交通费" });
-        showPrecheckResult(fallback);
-      }
-    });
-  }
-
-  function showPrecheckResult(data) {
-    var cls = data.result === "通过" ? "pass" : data.result === "预警" ? "warn" : "block";
-    var html = '<div class="precheck-card ' + cls + '">' +
-      '<div class="pc-result">预审结果：' + data.result + '</div>' +
-      '<div class="pc-reason">' + data.reason + '</div>' +
-      '<div class="pc-advice">' + data.recommendation + '</div>' +
-      '</div>';
-    if (!chatScroll) return;
-    var row = document.createElement("div");
-    row.className = "msg-row ai";
-    row.innerHTML = html;
-    chatScroll.appendChild(row);
-    chatScroll.scrollTop = chatScroll.scrollHeight;
-  }
-
-  // File upload
-  var fileInput = document.getElementById("fileInvoice");
-  var plusBtn = document.getElementById("btn-plus");
-  if (plusBtn && fileInput) {
-    plusBtn.addEventListener("click", function () { fileInput.click(); });
-    fileInput.addEventListener("change", async function () {
-      var f = fileInput.files && fileInput.files[0];
-      if (!f || !chatScroll) return;
-      var row = document.createElement("div");
-      row.className = "msg-row user";
-      var wrap = document.createElement("div");
-      wrap.className = "invoice-thumb";
-      wrap.innerHTML = '<div style="padding:2rem;text-align:center;color:#64748b;font-size:0.95rem;">已选择图片<br>' + f.name + "</div>";
-      row.appendChild(wrap);
-      chatScroll.appendChild(row);
-      chatScroll.scrollTop = chatScroll.scrollHeight;
-      fileInput.value = "";
-
-      var thinkingRow = appendThinking();
-      try {
-        const resp = await fetch(API_BASE + "/ocr", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileName: f.name }),
-        });
-        const json = await resp.json();
-        removeThinking(thinkingRow);
-        recognizedData = json.data;
-        showOcrCard(json.data);
-      } catch (error) {
-        var fallbackOcr = getMockOcrData(f.name);
-        removeThinking(thinkingRow);
-        recognizedData = fallbackOcr;
-        showOcrCard(fallbackOcr);
-      }
-    });
-  }
-
-  function showOcrCard(data) {
-    var html = '<div class="ocr-card" id="ocrCard">' +
-      '<div class="ocr-row"><span class="ocr-label">类目：</span><span class="ocr-value" contenteditable="true" data-field="category">' + (data.category || "") + '</span></div>' +
-      '<div class="ocr-row"><span class="ocr-label">金额：</span><span class="ocr-value" contenteditable="true" data-field="amount">¥' + Number(data.amount || 0).toLocaleString("zh-CN") + '</span></div>' +
-      '<div class="ocr-row"><span class="ocr-label">审批人：</span><span class="ocr-value" contenteditable="true" data-field="approver">' + (data.approver || "") + '</span></div>' +
-      '<div class="ocr-row"><span class="ocr-label">申请者：</span><span class="ocr-value" contenteditable="true" data-field="applicant">' + (data.applicant || "") + '</span></div>' +
-      '<div class="ocr-row"><span class="ocr-label">用途：</span><span class="ocr-value" contenteditable="true" data-field="description">' + (data.description || "") + '</span></div>' +
-      '<div class="ocr-actions"><button type="button" class="small-btn primary" id="btn-ocr-confirm">确认无误</button></div>' +
-      '</div>';
-    appendAiMessage("OCR识别完成，请核对以下字段。如需修改，直接点击对应值即可编辑：");
-    var row = document.createElement("div");
-    row.className = "msg-row ai";
-    row.innerHTML = html;
-    chatScroll.appendChild(row);
-    chatScroll.scrollTop = chatScroll.scrollHeight;
-
-    // Re-bind OCR confirm
-    var btn = document.getElementById("btn-ocr-confirm");
-    if (btn) {
-      btn.addEventListener("click", function () {
-        var card = document.getElementById("ocrCard");
-        var fields = card.querySelectorAll(".ocr-value");
-        recognizedData = {};
-        fields.forEach(function (f) {
-          var key = f.getAttribute("data-field");
-          var val = f.textContent.trim();
-          if (key === "amount") val = parseInt(val.replace(/[^\d]/g, ""), 10) || 0;
-          recognizedData[key] = val;
-        });
-        fields.forEach(function (f) { f.setAttribute("contenteditable", "false"); f.style.borderBottomColor = "transparent"; });
-        btn.disabled = true; btn.textContent = "已确认"; btn.classList.remove("primary");
-        if (preauditWrap) preauditWrap.style.display = "flex";
-        if (preauditBtnWrap) preauditBtnWrap.style.display = "flex";
-        chatScroll.scrollTop = chatScroll.scrollHeight;
-      });
-    }
-  }
-
-  // Ask list with thinking animation
-  var askItems = document.querySelectorAll("#askList .ask-item");
-  var askAnswers = {
-    "上周我的差旅费超标了多少？": "已计算：上周差旅费超标 ¥2,400，主要来自北京住宿与临时用车。",
-    "我近三个月的报销有没有异常？": "近三个月检测到 2 次风险预警：1 次附件不完整，1 次费用类别归属异常。",
-    "如果把北京住宿标准降到 500 元，能节省多少？": "按当前样本测算，月均可节省约 ¥8,000，季度约可节省 ¥24,000。",
-    "本月违规拦截了哪些单据？": "本月拦截 3 单：超标准住宿 1 单、缺少审批附件 1 单、非合规福利支出 1 单。"
-  };
-  if (askItems.length && chatScroll) {
-    askItems.forEach(function (item) {
-      item.addEventListener("click", function () {
-        var q = item.textContent.trim();
-        var userRow = document.createElement("div");
-        userRow.className = "msg-row user";
-        userRow.innerHTML = '<div class="bubble user">' + q + "</div>";
-        chatScroll.appendChild(userRow);
-
-        var thinkingRow = appendThinking();
-        setTimeout(function () {
-          removeThinking(thinkingRow);
-          var aiRow = document.createElement("div");
-          aiRow.className = "msg-row ai";
-          aiRow.innerHTML = '<div class="bubble ai">' + (askAnswers[q] || "已收到，正在为你计算。") + "</div>";
-          chatScroll.appendChild(aiRow);
-          chatScroll.scrollTop = chatScroll.scrollHeight;
-        }, 800 + Math.random() * 600);
-      });
-    });
-  }
-
-  // Todo card action buttons → switch to chat page
-  document.querySelectorAll(".todo-card .action-btn").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      var action = btn.getAttribute("data-action");
-      var id = btn.getAttribute("data-id");
-      // Switch to chat page
-      navItems.forEach(function (n) { n.classList.remove("active"); });
-      document.querySelector('[data-page="page-selfcheck"]').classList.add("active");
-      pages.forEach(function (p) { p.classList.toggle("active", p.id === "page-selfcheck"); });
-      // Add contextual message
-      var msgs = {
-        modify: "正在打开单据 " + id + " 的修改流程，请按提示修改后重新提交。",
-        supplement: "请为单据 " + id + " 补充缺失的附件或信息。",
-        precheck: "单据 " + id + " 已就绪，请确认 OCR 字段后发起预审。",
-        detail: "单据 " + id + " 已通过预审，可进入正式报销提交流程。"
-      };
-      if (msgs[action]) appendAiMessage(msgs[action]);
-    });
-  });
-
-  // Reimbursements table
-  var reimbursementsBody = document.getElementById("reimbursementsBody");
-
-  function formatCurrency(value) {
-    return "¥" + Number(value || 0).toLocaleString("zh-CN");
-  }
-
-  function statusClass(status) {
-    if (status === "审核中") return "run";
-    if (status === "已驳回") return "fail";
-    return "done";
-  }
-
-  function renderTable(data) {
-    if (!reimbursementsBody) return;
-    reimbursementsBody.innerHTML = data.map(function (item) {
-      return "<tr>" +
-        "<td>" + item.id + "</td>" +
-        "<td>" + item.type + "</td>" +
-        '<td class="amt">' + formatCurrency(item.amount) + "</td>" +
-        "<td>" + item.date + "</td>" +
-        '<td><span class="status-dot ' + statusClass(item.status) + '"></span>' + item.status + "</td>" +
-        "</tr>";
-    }).join("");
-  }
-
-  async function loadReimbursements() {
-    if (!reimbursementsBody) return;
+async function callLLM(messages, options) {
+  var cfg = getApiConfig();
+  options = options || {};
+  if (cfg.llmBaseUrl && cfg.llmApiKey) {
     try {
-      const resp = await fetch(API_BASE + "/reimbursements");
-      const json = await resp.json();
-      allReimbursements = Array.isArray(json.data) ? json.data : [];
-    } catch (e) {
-      allReimbursements = getMockReimbursements();
-    }
-    applyFilterAndSort();
-  }
-
-  function applyFilterAndSort() {
-    var data = allReimbursements.slice();
-    if (currentFilter !== "all") data = data.filter(function (d) { return d.status === currentFilter; });
-    if (sortField) {
-      data.sort(function (a, b) {
-        var va = a[sortField], vb = b[sortField];
-        if (typeof va === "string") { va = va.replace(/-/g, ""); vb = vb.replace(/-/g, ""); }
-        return sortAsc ? va - vb : vb - va;
+      var resp = await callConfiguredApi("llm", {
+        model: cfg.llmModel || "gpt-4o-mini",
+        messages: messages,
+        temperature: options.temperature || 0.3,
+        max_tokens: options.max_tokens || 1024
       });
-    }
-    renderTable(data);
-  }
-
-  // Filter tabs
-  var filterTabs = document.querySelectorAll("#filterTabs .filter-tab");
-  filterTabs.forEach(function (tab) {
-    tab.addEventListener("click", function () {
-      filterTabs.forEach(function (t) { t.classList.remove("active"); });
-      tab.classList.add("active");
-      currentFilter = tab.getAttribute("data-filter");
-      applyFilterAndSort();
-    });
-  });
-
-  // Sort headers
-  document.querySelectorAll("th[data-sort]").forEach(function (th) {
-    th.addEventListener("click", function () {
-      var field = th.getAttribute("data-sort");
-      if (sortField === field) { sortAsc = !sortAsc; } else { sortField = field; sortAsc = true; }
-      var arrow = sortAsc ? "↑" : "↓";
-      th.querySelector(".sort-arrow").textContent = arrow;
-      applyFilterAndSort();
-    });
-  });
-
-  // Export CSV
-  var exportBtn = document.getElementById("btn-export");
-  if (exportBtn) {
-    exportBtn.addEventListener("click", function () {
-      var data = allReimbursements;
-      var csv = "﻿单号,类型,金额,提交日,当前进度\n";
-      data.forEach(function (item) {
-        csv += item.id + "," + item.type + "," + item.amount + "," + item.date + "," + item.status + "\n";
-      });
-      var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement("a");
-      a.href = url;
-      a.download = "报销明细.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast("报销明细已导出");
-    });
-  }
-
-  // FAQ toggle
-  document.querySelectorAll(".faq-item").forEach(function (item) {
-    item.addEventListener("click", function () {
-      item.classList.toggle("open");
-    });
-  });
-
-  // Feedback submit
-  var feedbackBtn = document.getElementById("btn-feedback");
-  if (feedbackBtn) {
-    feedbackBtn.addEventListener("click", function () {
-      var title = document.getElementById("feedbackTitle").value.trim();
-      if (!title) { showToast("请填写反馈标题"); return; }
-      showToast("反馈已提交，感谢您的建议！");
-      document.getElementById("feedbackTitle").value = "";
-      document.getElementById("feedbackDetail").value = "";
-    });
-  }
-
-  // Composer enter key
-  var composer = document.getElementById("composer");
-  if (composer) {
-    composer.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        var text = composer.value.trim();
-        if (!text) return;
-        var userRow = document.createElement("div");
-        userRow.className = "msg-row user";
-        userRow.innerHTML = '<div class="bubble user">' + text + "</div>";
-        chatScroll.appendChild(userRow);
-        composer.value = "";
-
-        var thinkingRow = appendThinking();
-        setTimeout(function () {
-          removeThinking(thinkingRow);
-          appendAiMessage("已收到您的问题，正在查询相关政策与规则，请稍候...");
-        }, 600 + Math.random() * 500);
+      if (resp.ok && resp.data && resp.data.choices && resp.data.choices[0]) {
+        return { ok: true, data: resp.data.choices[0].message.content };
       }
-    });
+      throw new Error("Invalid LLM response");
+    } catch(e) {
+      return { ok: false, error: e.message };
+    }
+  }
+  return { ok: false, error: "Not configured" };
+}
+
+/* ============================================================
+   CONFIG MODAL
+   ============================================================ */
+function openConfigModal() {
+  var cfg = getApiConfig();
+  document.getElementById("cfgLlmBaseUrl").value = cfg.llmBaseUrl || "";
+  document.getElementById("cfgLlmApiKey").value = cfg.llmApiKey || "";
+  document.getElementById("cfgLlmModel").value = cfg.llmModel || "";
+  document.getElementById("cfgOcrUrl").value = cfg.ocrUrl || "";
+  document.getElementById("cfgPrecheckUrl").value = cfg.precheckUrl || "";
+  document.getElementById("cfgEmbeddingUrl").value = cfg.embeddingUrl || "";
+  document.getElementById("cfgVectorUrl").value = cfg.vectorUrl || "";
+  document.getElementById("cfgRerankUrl").value = cfg.rerankUrl || "";
+  document.getElementById("configModal").classList.add("show");
+}
+function closeConfigModal() { document.getElementById("configModal").classList.remove("show"); }
+function saveConfigAction() {
+  var cfg = {
+    llmBaseUrl: document.getElementById("cfgLlmBaseUrl").value.trim(),
+    llmApiKey: document.getElementById("cfgLlmApiKey").value.trim(),
+    llmModel: document.getElementById("cfgLlmModel").value.trim(),
+    ocrUrl: document.getElementById("cfgOcrUrl").value.trim(),
+    precheckUrl: document.getElementById("cfgPrecheckUrl").value.trim(),
+    embeddingUrl: document.getElementById("cfgEmbeddingUrl").value.trim(),
+    vectorUrl: document.getElementById("cfgVectorUrl").value.trim(),
+    rerankUrl: document.getElementById("cfgRerankUrl").value.trim()
+  };
+  saveApiConfig(cfg);
+  updateConfigBtnState();
+  showToast("配置已保存", "success");
+}
+function clearConfigAction() {
+  clearApiConfig();
+  document.getElementById("cfgLlmBaseUrl").value = "";
+  document.getElementById("cfgLlmApiKey").value = "";
+  document.getElementById("cfgLlmModel").value = "";
+  document.getElementById("cfgOcrUrl").value = "";
+  document.getElementById("cfgPrecheckUrl").value = "";
+  document.getElementById("cfgEmbeddingUrl").value = "";
+  document.getElementById("cfgVectorUrl").value = "";
+  document.getElementById("cfgRerankUrl").value = "";
+  updateConfigBtnState();
+  showToast("配置已清空，已切换为模拟数据", "info");
+}
+async function testApiConnection() {
+  var cfg = getApiConfig();
+  if (!cfg.llmBaseUrl) { showToast("请先配置 LLM Base URL", "warning"); return; }
+  try {
+    var h = cfg.llmApiKey ? { "Authorization": "Bearer " + cfg.llmApiKey } : {};
+    var resp = await fetch(cfg.llmBaseUrl + "/models", { headers: h });
+    if (resp.ok) showToast("连接成功！", "success");
+    else showToast("连接失败: HTTP " + resp.status, "error");
+  } catch(e) { showToast("连接失败: " + e.message, "error"); }
+}
+function updateConfigBtnState() {
+  var cfg = getApiConfig();
+  var btn = document.getElementById("apiConfigBtn");
+  if (cfg.llmBaseUrl || cfg.ocrUrl || cfg.precheckUrl) btn.classList.add("configured");
+  else btn.classList.remove("configured");
+}
+
+/* ============================================================
+   PAGE SWITCHING
+   ============================================================ */
+function switchPage(page) {
+  currentPage = page;
+  document.querySelectorAll(".page").forEach(function(p){ p.classList.remove("active"); });
+  document.querySelectorAll(".nav-item").forEach(function(n){ n.classList.remove("active"); });
+  var pageId = "page" + page.charAt(0).toUpperCase() + page.slice(1);
+  document.getElementById(pageId).classList.add("active");
+  var navItem = document.querySelector('.nav-item[data-page="'+page+'"]');
+  if (navItem) navItem.classList.add("active");
+  var titles = {chat:"智能对话",todo:"待处理单",reimb:"我的报销",arch:"产品架构",help:"帮助反馈"};
+  document.getElementById("pageTitle").textContent = titles[page] || page;
+  if (page === "arch") renderArchitecture();
+  if (page === "todo") renderTodoList();
+  if (page === "reimb") filterReimbTable();
+  if (page === "help") { renderFAQ(); renderPolicies(); }
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("show");
+}
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebarOverlay").classList.toggle("show");
+}
+
+/* ============================================================
+   MOCK DATA - OCR (4 expense types, ALL 3-layer fields)
+   ============================================================ */
+var MOCK_OCR_DATA = {
+  "差旅交通费": {
+    invoiceType:"增值税电子普通发票",invoiceNumber:"FP20260401001",invoiceCode:"044002100311",
+    invoiceDate:"2026-03-28",buyerName:"XX科技有限公司",buyerTaxId:"91110108MA01XXXXX",
+    sellerName:"中国国航",amount:1500,taxAmount:90,totalAmount:1590,checkCode:"72819364501234567890",
+    expenseType:"差旅交通费",expenseDate:"2026-03-28",city:"北京→上海",
+    tripCode:"TR-2026-0142",costCenter:"CC-研发中心",purpose:"客户现场技术支持",
+    participants:"张三、李四",clientName:"—",
+    applicant:"张三",department:"研发中心",level:"P6",
+    approver:"王经理",budgetSubject:"差旅-国内",
+    hasPreApplication:"是",duplicateHit:"否",
+    confidences:{invoiceType:.98,invoiceNumber:.97,invoiceCode:.92,invoiceDate:.99,buyerName:.96,buyerTaxId:.88,sellerName:.95,amount:.99,taxAmount:.97,totalAmount:.99,checkCode:.75,expenseType:.96,expenseDate:.94,city:.91,tripCode:.85,costCenter:.89,purpose:.78,participants:.72,clientName:.50,applicant:.98,department:.97,level:.95,approver:.93,budgetSubject:.88,hasPreApplication:.82,duplicateHit:.99}
+  },
+  "住宿费": {
+    invoiceType:"增值税电子普通发票",invoiceNumber:"FP20260402002",invoiceCode:"044002100312",
+    invoiceDate:"2026-04-02",buyerName:"XX科技有限公司",buyerTaxId:"91110108MA01XXXXX",
+    sellerName:"如家酒店(北京国贸店)",amount:680,taxAmount:40.8,totalAmount:720.8,checkCode:"82930475612345678901",
+    expenseType:"住宿费",expenseDate:"2026-04-01",city:"北京",
+    tripCode:"TR-2026-0142",costCenter:"CC-研发中心",purpose:"出差住宿",
+    participants:"张三",clientName:"—",
+    applicant:"张三",department:"研发中心",level:"P6",
+    approver:"王经理",budgetSubject:"差旅-住宿",
+    hasPreApplication:"是",duplicateHit:"否",
+    confidences:{invoiceType:.97,invoiceNumber:.96,invoiceCode:.90,invoiceDate:.98,buyerName:.97,buyerTaxId:.86,sellerName:.93,amount:.98,taxAmount:.96,totalAmount:.98,checkCode:.70,expenseType:.95,expenseDate:.96,city:.98,tripCode:.82,costCenter:.87,purpose:.80,participants:.90,clientName:.45,applicant:.99,department:.98,level:.96,approver:.92,budgetSubject:.85,hasPreApplication:.80,duplicateHit:.99}
+  },
+  "客户招待费": {
+    invoiceType:"增值税电子普通发票",invoiceNumber:"FP20260403003",invoiceCode:"044002100313",
+    invoiceDate:"2026-04-03",buyerName:"XX科技有限公司",buyerTaxId:"91110108MA01XXXXX",
+    sellerName:"全聚德(望京店)",amount:960,taxAmount:57.6,totalAmount:1017.6,checkCode:"93041586723456789012",
+    expenseType:"客户招待费",expenseDate:"2026-04-03",city:"北京",
+    tripCode:"—",costCenter:"CC-销售部",purpose:"客户商务宴请",
+    participants:"赵总、钱经理、客户A方3人",clientName:"A科技有限公司",
+    applicant:"赵总",department:"销售部",level:"P7",
+    approver:"李总监",budgetSubject:"招待费",
+    hasPreApplication:"否",duplicateHit:"否",
+    confidences:{invoiceType:.96,invoiceNumber:.94,invoiceCode:.88,invoiceDate:.97,buyerName:.95,buyerTaxId:.84,sellerName:.91,amount:.97,taxAmount:.95,totalAmount:.97,checkCode:.65,expenseType:.93,expenseDate:.95,city:.97,tripCode:.40,costCenter:.83,purpose:.76,participants:.68,clientName:.72,applicant:.97,department:.96,level:.94,approver:.90,budgetSubject:.82,hasPreApplication:.60,duplicateHit:.99}
+  },
+  "办公采购": {
+    invoiceType:"增值税专用发票",invoiceNumber:"FP20260404004",invoiceCode:"044002100314",
+    invoiceDate:"2026-04-04",buyerName:"XX科技有限公司",buyerTaxId:"91110108MA01XXXXX",
+    sellerName:"京东商城",amount:420,taxAmount:54.6,totalAmount:474.6,checkCode:"04152697834567890123",
+    expenseType:"办公采购",expenseDate:"2026-04-04",city:"北京",
+    tripCode:"—",costCenter:"CC-行政部",purpose:"办公设备采购",
+    participants:"—",clientName:"—",
+    applicant:"刘行政",department:"行政部",level:"P5",
+    approver:"陈主管",budgetSubject:"办公采购",
+    hasPreApplication:"是",duplicateHit:"否",
+    confidences:{invoiceType:.99,invoiceNumber:.98,invoiceCode:.95,invoiceDate:.99,buyerName:.98,buyerTaxId:.92,sellerName:.97,amount:.99,taxAmount:.98,totalAmount:.99,checkCode:.88,expenseType:.98,expenseDate:.97,city:.95,tripCode:.50,costCenter:.94,purpose:.92,participants:.55,clientName:.50,applicant:.99,department:.98,level:.97,approver:.96,budgetSubject:.95,hasPreApplication:.90,duplicateHit:.99}
+  }
+};
+
+/* ============================================================
+   MOCK DATA - ATTACHMENT CHECKLISTS
+   ============================================================ */
+var ATTACHMENT_CHECKLISTS = {
+  "差旅交通费":[
+    {name:"发票",required:true,status:"已上传",reason:"",action:""},
+    {name:"行程单",required:true,status:"缺失",reason:"未检测到行程单附件",action:"点击上传"},
+    {name:"出差申请单",required:true,status:"已上传",reason:"",action:""}
+  ],
+  "住宿费":[
+    {name:"发票",required:true,status:"已上传",reason:"",action:""},
+    {name:"酒店水单",required:true,status:"已上传",reason:"",action:""},
+    {name:"入住日期",required:true,status:"已上传",reason:"",action:""},
+    {name:"城市信息",required:true,status:"已上传",reason:"",action:""},
+    {name:"超标特殊审批说明",required:true,status:"缺失",reason:"金额超出住宿标准(600元)",action:"生成说明"}
+  ],
+  "客户招待费":[
+    {name:"发票",required:true,status:"已上传",reason:"",action:""},
+    {name:"客户名称",required:true,status:"已确认",reason:"",action:""},
+    {name:"参与人员",required:true,status:"缺失",reason:"未填写参与人员明细",action:"点击填写"},
+    {name:"招待事由",required:true,status:"已确认",reason:"",action:""},
+    {name:"人均金额说明",required:true,status:"缺失",reason:"人均约203.5元，需说明",action:"生成说明"}
+  ],
+  "办公采购":[
+    {name:"发票",required:true,status:"已上传",reason:"",action:""},
+    {name:"采购审批",required:true,status:"已上传",reason:"",action:""},
+    {name:"验收单",required:true,status:"缺失",reason:"未上传验收单",action:"点击上传"},
+    {name:"项目/成本中心",required:true,status:"已确认",reason:"",action:""}
+  ]
+};
+
+/* ============================================================
+   MOCK DATA - KEYWORD CACHE (5+ entries)
+   ============================================================ */
+var keywordAnswerCache = [
+  {keywords:["差旅","标准","限额"],answer:"差旅费标准：国内交通费3000元/次以内，住宿费600元/晚以内（一线城市可上浮20%），餐饮费500元/天以内。超标需特殊审批。（示例制度）"},
+  {keywords:["招待","客户","限额"],answer:"客户招待费限额1000元/次，需提前报备，人均不超过200元（特殊情况除外），需提供客户名称及参与人员名单。（示例制度）"},
+  {keywords:["发票","重复","校验"],answer:"系统会自动校验发票号码，若检测到重复发票将触发拦截。请确保每张发票仅报销一次。（示例制度）"},
+  {keywords:["报销","周期","时间"],answer:"费用发生后须在30天内提交报销申请，超过30天需提供延期说明并经部门负责人审批。（示例制度）"},
+  {keywords:["住宿","超标","审批"],answer:"住宿费超标时需提交超标说明，说明原因（如旺季、展会期间等），经直属上级审批后方可报销。（示例制度）"},
+  {keywords:["办公","采购","流程"],answer:"办公采购需先提交采购申请，经审批后采购，收到货物后需填写验收单，三单齐全方可报销。（示例制度）"}
+];
+
+/* ============================================================
+   MOCK DATA - FAQ (8+ entries)
+   ============================================================ */
+var faqKnowledgeBase = [
+  {q:"差旅交通费的报销标准是什么？",a:"国内差旅交通费标准为3000元/次以内，国际差旅根据目的地另行规定。机票需提供行程单，火车票/打车需提供有效发票。"},
+  {q:"住宿费超标准怎么办？",a:"住宿费超出600元/晚标准时，需在报销时提交超标说明，说明超标原因（如展会期间、旺季等），并经直属上级审批。"},
+  {q:"客户招待费需要哪些材料？",a:"客户招待费报销需提供：发票、客户名称、参与人员名单、招待事由说明、人均金额说明。缺少任何一项将无法通过预审。"},
+  {q:"发票重复了怎么处理？",a:"如果系统检测到发票重复，将触发拦截。请检查是否已报销过该发票，如确认未报销，请联系财务部门核实。"},
+  {q:"超过30天还能报销吗？",a:"超过30天需提供延期说明，经部门负责人审批后方可报销。建议在费用发生后尽快提交报销申请。"},
+  {q:"如何发起特殊审批？",a:"在预审结果页面点击【发起特殊审批】按钮，填写审批原因和说明，提交后将流转至上级审批人。"},
+  {q:"预审结果有哪些状态？",a:"预审结果有四种：通过（无规则命中）、预警（命中警告规则但可继续）、拦截（命中阻断规则需修改）、信息不足（关键字段缺失需补充）。"},
+  {q:"办公采购报销需要什么材料？",a:"办公采购需提供：发票、采购审批单、验收单、项目/成本中心归属信息。三单齐全方可报销。"},
+  {q:"预审的规则有哪些？",a:"预审包含8项规则：金额标准校验、附件完整性校验、发票重复校验、费用类型一致性校验、报销周期校验、预算/项目归属校验、特殊审批判断、异常模式识别。"}
+];
+
+/* ============================================================
+   MOCK DATA - POLICIES (3, all tagged 示例制度)
+   ============================================================ */
+var MOCK_POLICIES = [
+  {title:"差旅费用管理制度",tag:"示例制度",content:"<ul><li>国内交通费标准：3000元/次以内</li><li>住宿费标准：600元/晚以内（一线城市可上浮20%）</li><li>餐饮费标准：500元/天以内</li><li>超标处理：需提交超标说明，经直属上级审批</li><li>出差申请：出差前须提交出差申请单</li><li>报销周期：费用发生后30天内提交</li></ul>"},
+  {title:"客户招待费用管理制度",tag:"示例制度",content:"<ul><li>招待费限额：1000元/次以内</li><li>人均标准：不超过200元/人（特殊情况除外）</li><li>提前报备：招待前须向直属上级报备</li><li>必要材料：发票、客户名称、参与人员、招待事由、人均金额说明</li><li>禁止事项：不得报销私人宴请</li><li>审批流程：部门负责人审批 → 财务审核</li></ul>"},
+  {title:"发票管理规范",tag:"示例制度",content:"<ul><li>发票要求：须为合规增值税发票，信息完整</li><li>重复校验：系统自动校验发票号码，重复发票触发拦截</li><li>发票类型：增值税专用发票、增值税电子普通发票</li><li>校验码：发票校验码须完整可识别</li><li>报销周期：发票开具后30天内须提交报销</li><li>存档要求：电子发票须保留原件PDF</li></ul>"}
+];
+
+/* ============================================================
+   MOCK DATA - PRECHECK RULES (8 rules)
+   ============================================================ */
+var PRECHECK_RULES = [
+  {
+    rule_id:"R001",rule_name:"金额标准校验",
+    check:function(data){
+      var limits={"差旅交通费":3000,"交通费":2000,"住宿费":600,"餐饮费":500,"客户招待费":1000,"招待费":1000,"办公采购":1000};
+      var amt=data.totalAmount||data.amount;var limit=limits[data.expenseType]||1000;
+      if(amt<=limit) return{rule_id:"R001",rule_name:"金额标准校验",status:"pass",fact:amt+"元",standard:"≤"+limit+"元",gap:"符合标准",basis:"费用管理制度第3条",required_action:"无"};
+      return{rule_id:"R001",rule_name:"金额标准校验",status:"warning",fact:amt+"元",standard:"≤"+limit+"元",gap:"超出"+(amt-limit).toFixed(1)+"元",basis:"费用管理制度第3条",required_action:"提交超标说明或调整金额"};
+    }
+  },
+  {
+    rule_id:"R002",rule_name:"附件完整性校验",
+    check:function(data){
+      var checklist=ATTACHMENT_CHECKLISTS[data.expenseType]||[];
+      var missing=checklist.filter(function(c){return c.required&&c.status==="缺失";});
+      if(missing.length===0) return{rule_id:"R002",rule_name:"附件完整性校验",status:"pass",fact:"必填材料齐全",standard:"必填材料齐全",gap:"无缺失",basis:"附件管理制度",required_action:"无"};
+      var names=missing.map(function(m){return m.name;}).join("、");
+      return{rule_id:"R002",rule_name:"附件完整性校验",status:"block",fact:"缺失: "+names,standard:"必填材料齐全",gap:"缺少"+missing.length+"项必填材料",basis:"附件管理制度",required_action:"补充缺失材料"};
+    }
+  },
+  {
+    rule_id:"R003",rule_name:"发票重复校验",
+    check:function(data){
+      if(data.duplicateHit==="是") return{rule_id:"R003",rule_name:"发票重复校验",status:"block",fact:"发票号码已存在",standard:"发票号码唯一",gap:"重复发票",basis:"发票管理规范第2条",required_action:"核实发票或替换"};
+      return{rule_id:"R003",rule_name:"发票重复校验",status:"pass",fact:"发票号码唯一",standard:"发票号码唯一",gap:"无重复",basis:"发票管理规范第2条",required_action:"无"};
+    }
+  },
+  {
+    rule_id:"R004",rule_name:"费用类型与发票内容一致性校验",
+    check:function(data){
+      var typeMap={"差旅交通费":["国航","南航","高铁","滴滴","出租"],"住宿费":["酒店","宾馆","民宿"],"客户招待费":["餐厅","酒楼","茶楼","全聚德"],"办公采购":["京东","苏宁","办公"]};
+      var keywords=typeMap[data.expenseType]||[];var seller=data.sellerName||"";
+      var matched=keywords.some(function(k){return seller.indexOf(k)>=0;});
+      if(matched||keywords.length===0) return{rule_id:"R004",rule_name:"费用类型与发票内容一致性校验",status:"pass",fact:"销方:"+seller,standard:"与费用类型匹配",gap:"一致",basis:"报销审核规则",required_action:"无"};
+      return{rule_id:"R004",rule_name:"费用类型与发票内容一致性校验",status:"info",fact:"销方:"+seller,standard:"与费用类型匹配",gap:"无法自动判断一致性",basis:"报销审核规则",required_action:"人工确认"};
+    }
+  },
+  {
+    rule_id:"R005",rule_name:"报销周期校验",
+    check:function(data){
+      var expDate=new Date(data.expenseDate||data.invoiceDate);var now=new Date();
+      var diff=(now-expDate)/(1000*60*60*24);
+      if(diff<=30) return{rule_id:"R005",rule_name:"报销周期校验",status:"pass",fact:Math.round(diff)+"天",standard:"≤30天",gap:"符合周期",basis:"费用管理制度第6条",required_action:"无"};
+      return{rule_id:"R005",rule_name:"报销周期校验",status:"warning",fact:Math.round(diff)+"天",standard:"≤30天",gap:"超期"+Math.round(diff-30)+"天",basis:"费用管理制度第6条",required_action:"提供延期说明"};
+    }
+  },
+  {
+    rule_id:"R006",rule_name:"预算/项目归属校验",
+    check:function(data){
+      if(data.tripCode&&data.tripCode!=="—"&&data.costCenter&&data.costCenter!=="—") return{rule_id:"R006",rule_name:"预算/项目归属校验",status:"pass",fact:"项目:"+data.tripCode+" 成本中心:"+data.costCenter,standard:"须有项目或成本中心归属",gap:"归属明确",basis:"预算管理制度",required_action:"无"};
+      if(!data.tripCode||data.tripCode==="—") return{rule_id:"R006",rule_name:"预算/项目归属校验",status:"info",fact:"无项目编号",standard:"须有项目或成本中心归属",gap:"项目编号缺失",basis:"预算管理制度",required_action:"补充项目编号"};
+      return{rule_id:"R006",rule_name:"预算/项目归属校验",status:"pass",fact:"成本中心:"+data.costCenter,standard:"须有项目或成本中心归属",gap:"归属明确",basis:"预算管理制度",required_action:"无"};
+    }
+  },
+  {
+    rule_id:"R007",rule_name:"是否需要特殊审批",
+    check:function(data){
+      var amt=data.totalAmount||data.amount;
+      var limits={"差旅交通费":3000,"住宿费":600,"客户招待费":1000,"办公采购":1000};
+      var limit=limits[data.expenseType]||1000;
+      if(amt>limit) return{rule_id:"R007",rule_name:"是否需要特殊审批",status:"warning",fact:amt+"元 > 标准"+limit+"元",standard:"金额≤标准",gap:"超标需特殊审批",basis:"费用管理制度第4条",required_action:"发起特殊审批"};
+      if(data.hasPreApplication==="否"&&data.expenseType==="客户招待费") return{rule_id:"R007",rule_name:"是否需要特殊审批",status:"warning",fact:"无事前申请",standard:"招待费须事前申请",gap:"缺少事前审批",basis:"招待费管理制度第3条",required_action:"补做事前申请"};
+      return{rule_id:"R007",rule_name:"是否需要特殊审批",status:"pass",fact:"无需特殊审批",standard:"金额在标准内且已事前申请",gap:"无",basis:"费用管理制度",required_action:"无"};
+    }
+  },
+  {
+    rule_id:"R008",rule_name:"异常模式识别",
+    check:function(data){
+      var anomalies=[];var amt=data.totalAmount||data.amount;
+      if(amt>900&&amt<1100) anomalies.push("疑似拆单(金额接近限额)");
+      var expDate=new Date(data.expenseDate||data.invoiceDate);var day=expDate.getDay();
+      if(day===0||day===6) anomalies.push("周末消费");
+      if(data.invoiceNumber&&data.invoiceNumber.endsWith("01")) anomalies.push("高频报销(近30天内3次)");
+      var now=new Date();var diff=(now-expDate)/(1000*60*60*24);
+      if(diff>20) anomalies.push("跨期报销(超过20天)");
+      if(anomalies.length===0) return{rule_id:"R008",rule_name:"异常模式识别",status:"pass",fact:"未检测到异常模式",standard:"无异常",gap:"正常",basis:"异常模式识别规则",required_action:"无"};
+      return{rule_id:"R008",rule_name:"异常模式识别",status:anomalies.length>=2?"warning":"info",fact:anomalies.join("；"),standard:"无异常",gap:"检测到"+anomalies.length+"项异常",basis:"异常模式识别规则",required_action:"人工核实"};
+    }
+  }
+];
+
+/* ============================================================
+   MOCK DATA - REIMBURSEMENTS (6+ entries)
+   ============================================================ */
+var allReimbursements = [
+  {id:"BX-2026-0001",type:"差旅交通费",amount:1680,date:"2026-03-28",status:"通过",riskScore:12,applicant:"张三",department:"研发中心"},
+  {id:"BX-2026-0002",type:"住宿费",amount:720.8,date:"2026-04-02",status:"预警",riskScore:58,applicant:"张三",department:"研发中心"},
+  {id:"BX-2026-0003",type:"客户招待费",amount:1017.6,date:"2026-04-03",status:"拦截",riskScore:82,applicant:"赵总",department:"销售部"},
+  {id:"BX-2026-0004",type:"办公采购",amount:474.6,date:"2026-04-04",status:"通过",riskScore:8,applicant:"刘行政",department:"行政部"},
+  {id:"BX-2026-0005",type:"差旅交通费",amount:3200,date:"2026-04-05",status:"信息不足",riskScore:45,applicant:"李四",department:"市场部"},
+  {id:"BX-2026-0006",type:"住宿费",amount:450,date:"2026-04-06",status:"通过",riskScore:5,applicant:"王五",department:"研发中心"},
+  {id:"BX-2026-0007",type:"客户招待费",amount:860,date:"2026-04-07",status:"预警",riskScore:55,applicant:"赵总",department:"销售部"},
+  {id:"BX-2026-0008",type:"办公采购",amount:1200,date:"2026-04-08",status:"已驳回",riskScore:90,applicant:"刘行政",department:"行政部"}
+];
+
+/* ============================================================
+   MOCK DATA - TODO LIST
+   ============================================================ */
+var TODO_LIST = [
+  {id:"BX-2026-0003",type:"客户招待费",amount:1017.6,date:"2026-04-03",status:"拦截",reason:"附件不完整(缺少参与人员名单)；招待费超标且无事前申请",missing:["参与人员名单","事前申请"],hitRules:["R002-附件缺失","R007-缺少事前审批"],suggestion:"补充参与人员名单，补做事前申请或发起特殊审批",applicant:"赵总",department:"销售部"},
+  {id:"BX-2026-0005",type:"差旅交通费",amount:3200,date:"2026-04-05",status:"信息不足",reason:"项目编号缺失，差旅申请单未上传",missing:["项目编号","差旅申请单"],hitRules:["R002-附件缺失","R006-项目归属不明"],suggestion:"补充项目编号和出差申请单",applicant:"李四",department:"市场部"},
+  {id:"BX-2026-0002",type:"住宿费",amount:720.8,date:"2026-04-02",status:"预警",reason:"住宿费超出标准(600元)，缺少超标说明",missing:["超标特殊审批说明"],hitRules:["R001-超标","R007-需特殊审批"],suggestion:"生成超标说明或发起特殊审批",applicant:"张三",department:"研发中心"}
+];
+
+/* ============================================================
+   MOCK SIMILARITY (for FAQ matching without Embedding API)
+   ============================================================ */
+var SYNONYM_DICT = {
+  "差旅":["出差","旅行","交通","机票","火车"],"标准":["限额","额度","上限","规定"],
+  "住宿":["酒店","宾馆","旅馆"],"招待":["宴请","商务","客户"],
+  "发票":["票据","收据"],"报销":["费用","付款"],"审批":["审批","批准","审核"],
+  "采购":["购买","办公","买"],"重复":["重复","重号"],"周期":["时间","期限","天数"]
+};
+
+function mockSimilarity(q1, q2) {
+  q1 = q1.toLowerCase(); q2 = q2.toLowerCase();
+  var set1 = new Set(q1.split("")), set2 = new Set(q2.split(""));
+  var inter = 0; set1.forEach(function(c){ if(set2.has(c)) inter++; });
+  var union = new Set(Array.from(set1).concat(Array.from(set2))).size;
+  var charSim = union > 0 ? inter / union : 0;
+  var synBoost = 0;
+  Object.keys(SYNONYM_DICT).forEach(function(key){
+    var syns = SYNONYM_DICT[key];
+    var hasInQ1 = syns.some(function(s){ return q1.indexOf(s)>=0; }) || q1.indexOf(key)>=0;
+    var hasInQ2 = syns.some(function(s){ return q2.indexOf(s)>=0; }) || q2.indexOf(key)>=0;
+    if (hasInQ1 && hasInQ2) synBoost += 0.08;
+  });
+  return Math.min(charSim + synBoost, 1.0);
+}
+
+/* ============================================================
+   LLM FUNCTIONS (5 functions that call LLM)
+   ============================================================ */
+
+// 【会调用 LLM】复杂问题意图识别
+async function llmRecognizeIntent(query) {
+  var result = await callLLM([
+    {role:"system",content:"你是报销助手，识别用户问题的意图。返回JSON: {intent:'policy_query'|'process_query'|'precheck_query'|'general', sub_type:'', keywords:[]}"},
+    {role:"user",content:query}
+  ], {temperature:0.1, max_tokens:256});
+  if (result.ok) { try { return JSON.parse(result.data); } catch(e){} }
+  // Mock fallback (NO LLM call for this fallback - deterministic)
+  if (query.indexOf("标准")>=0||query.indexOf("限额")>=0||query.indexOf("制度")>=0) return {intent:"policy_query",sub_type:"standard",keywords:["标准"]};
+  if (query.indexOf("流程")>=0||query.indexOf("怎么")>=0||query.indexOf("如何")>=0) return {intent:"process_query",sub_type:"",keywords:["流程"]};
+  if (query.indexOf("预审")>=0||query.indexOf("审核")>=0) return {intent:"precheck_query",sub_type:"",keywords:["预审"]};
+  return {intent:"general",sub_type:"",keywords:[]};
+}
+
+// 【会调用 LLM】Query 改写
+async function llmRewriteQuery(query, intent) {
+  var result = await callLLM([
+    {role:"system",content:"你是报销助手，请将用户问题改写为更清晰的检索查询。直接返回改写后的文本。"},
+    {role:"user",content:"意图:"+JSON.stringify(intent)+"\n问题:"+query}
+  ], {temperature:0.2, max_tokens:128});
+  if (result.ok) return result.data;
+  return query + " 报销 制度 标准";
+}
+
+// 【会调用 LLM】基于检索上下文生成自然语言答案
+async function llmGenerateAnswer(context, query) {
+  var result = await callLLM([
+    {role:"system",content:"你是费用报销智能助手，请根据提供的制度上下文回答用户问题。如果上下文不足以回答，请说明。回答须标注引用来源。"},
+    {role:"user",content:"制度上下文:\n"+context+"\n\n用户问题:"+query}
+  ], {temperature:0.3, max_tokens:512});
+  if (result.ok) return result.data;
+  return "根据制度规定：" + context.split("\n")[0] + "（mock 制度条款）如需更详细信息，请联系财务部门。";
+}
+
+// 【会调用 LLM】解释规则引擎输出的预审结果
+async function llmExplainPrecheck(precheckResult) {
+  var result = await callLLM([
+    {role:"system",content:"你是费用报销预审助手，请用通俗语言解释预审结果，包括命中规则的含义和建议。"},
+    {role:"user",content:"预审结果:\n"+JSON.stringify(precheckResult, null, 2)}
+  ], {temperature:0.3, max_tokens:512});
+  if (result.ok) return result.data;
+  var lines = ["预审结果解释（mock 制度条款）："];
+  if (precheckResult.result==="通过") lines.push("您的报销申请已通过所有规则校验，可以提交正式报销。");
+  else if (precheckResult.result==="预警") lines.push("您的报销申请命中了预警规则，存在一定风险，建议根据提示进行补充或修改。");
+  else if (precheckResult.result==="拦截") lines.push("您的报销申请被拦截，存在不合规项，请根据提示修改后重新提交。");
+  else lines.push("您的报销申请信息不完整，请补充缺失信息后重新预审。");
+  (precheckResult.hit_rules||[]).forEach(function(r){ lines.push("- "+r.rule_name+": "+r.gap+"，建议"+r.required_action); });
+  return lines.join("\n");
+}
+
+// 【会调用 LLM】生成报销补充说明、超标说明、特殊审批说明草稿
+async function llmGenerateReimbursementNote(precheckResult) {
+  var result = await callLLM([
+    {role:"system",content:"你是费用报销助手，请根据预审结果和字段信息生成报销补充说明草稿。注意：只能基于已有的字段值和命中规则生成，不得捏造事实。"},
+    {role:"user",content:"预审结果:\n"+JSON.stringify(precheckResult, null, 2)+"\n\n当前字段:\n"+JSON.stringify(currentOcrData||{}, null, 2)}
+  ], {temperature:0.4, max_tokens:512});
+  if (result.ok) return result.data;
+  var note = "报销说明（草稿）\n\n";
+  note += "申请人：" + (currentOcrData?currentOcrData.applicant:"—") + "\n";
+  note += "费用类型：" + (currentOcrData?currentOcrData.expenseType:"—") + "\n";
+  note += "金额：" + (currentOcrData?currentOcrData.totalAmount:"—") + "元\n\n";
+  note += "说明：\n";
+  if (currentOcrData && currentOcrData.expenseType==="住宿费") {
+    note += "本次出差住宿地点位于北京（一线城市），因展会期间房源紧张，住宿费用超出标准600元/晚，实际支付"+currentOcrData.totalAmount+"元，超标原因为旺季房价上涨，特此说明。\n";
+  } else if (currentOcrData && currentOcrData.expenseType==="客户招待费") {
+    note += "本次招待客户A科技有限公司，参与人员共5人，招待事由为商务洽谈，人均约203.5元。\n";
+  } else {
+    note += "本次报销因特殊原因需补充说明，请根据实际情况修改本说明。（mock 制度条款）\n";
+  }
+  note += "\n（AI 生成草稿，请人工确认）";
+  return note;
+}
+
+/* ============================================================
+   RAG 3-STAGE QA
+   ============================================================ */
+async function processQuestion(query) {
+  // Stage 1: Keyword cache (NO LLM)
+  var cacheHit = null;
+  for (var i = 0; i < keywordAnswerCache.length; i++) {
+    var entry = keywordAnswerCache[i];
+    var coverage = 0;
+    entry.keywords.forEach(function(kw){ if(query.indexOf(kw)>=0) coverage++; });
+    if (coverage / entry.keywords.length >= 0.9) { cacheHit = entry; break; }
+  }
+  if (cacheHit) return {answer:cacheHit.answer, path:"关键词缓存", usedLLM:false, source:"关键词缓存匹配"};
+
+  // Stage 2: FAQ similarity (NO LLM, use mock similarity if no Embedding API)
+  var bestFaq = null, bestSim = 0;
+  for (var j = 0; j < faqKnowledgeBase.length; j++) {
+    var sim = mockSimilarity(query, faqKnowledgeBase[j].q);
+    if (sim > bestSim) { bestSim = sim; bestFaq = faqKnowledgeBase[j]; }
+  }
+  if (bestSim >= 0.85 && bestFaq) return {answer:bestFaq.a, path:"FAQ匹配 (相似度:"+bestSim.toFixed(2)+")", usedLLM:false, source:"FAQ知识库"};
+
+  // Stage 3: RAG pipeline (intent→rewrite→route→hybrid search→rerank→LLM generate)
+  var intent = await llmRecognizeIntent(query);
+  var rewritten = await llmRewriteQuery(query, intent);
+  var searchResults = [];
+  faqKnowledgeBase.forEach(function(faq){
+    var s = mockSimilarity(rewritten, faq.q);
+    if (s > 0.3) searchResults.push({text:faq.a, source:"FAQ", score:s});
+  });
+  MOCK_POLICIES.forEach(function(p){
+    var s = mockSimilarity(rewritten, p.title);
+    if (s > 0.2) searchResults.push({text:p.title+" (示例制度)", source:"制度库", score:s});
+  });
+  searchResults.sort(function(a,b){ return b.score - a.score; });
+  var context = searchResults.slice(0,3).map(function(r){ return "["+r.source+"] "+r.text; }).join("\n");
+  if (!context) context = "暂无相关制度信息。（mock 制度条款）";
+
+  var answer = await llmGenerateAnswer(context, query);
+  var sources = searchResults.slice(0,3).map(function(r){ return r.source; }).join(", ") || "mock 制度条款";
+  return {answer:answer, path:"RAG生成", usedLLM:true, source:sources};
+}
+
+/* ============================================================
+   CHAT FUNCTIONS
+   ============================================================ */
+function addChatMessage(role, html, extra) {
+  var container = document.getElementById("chatMessages");
+  var msgDiv = document.createElement("div");
+  msgDiv.className = "chat-msg " + role;
+  var avatar = document.createElement("div");
+  avatar.className = "chat-avatar";
+  avatar.textContent = role === "bot" ? "🤖" : "👤";
+  var bubble = document.createElement("div");
+  bubble.className = "chat-bubble";
+  bubble.innerHTML = html;
+  if (extra) bubble.appendChild(extra);
+  msgDiv.appendChild(avatar);
+  msgDiv.appendChild(bubble);
+  container.appendChild(msgDiv);
+  container.scrollTop = container.scrollHeight;
+  return bubble;
+}
+function addBotMessage(html, extra) { return addChatMessage("bot", html, extra); }
+function addUserMessage(html) { addChatMessage("user", html); }
+
+function createStepIndicator(currentStep) {
+  var steps = ["单据进入","OCR识别","字段确认","附件检查","规则预审","纠错提交"];
+  var div = document.createElement("div");
+  div.className = "step-indicator";
+  steps.forEach(function(s, i){
+    var dot = document.createElement("span");
+    dot.className = "step-dot" + (i < currentStep ? " done" : i === currentStep ? " active" : "");
+    dot.textContent = (i+1) + "." + s;
+    div.appendChild(dot);
+  });
+  return div;
+}
+
+/* ============================================================
+   FLOW STEP 1: 单据进入
+   ============================================================ */
+function startFlow(type) {
+  currentFlowStep = 1;
+  currentExpenseType = type;
+  currentOcrData = null;
+  currentPrecheckResult = null;
+  var msg = "开始处理 <b>" + type + "</b> 报销单据，正在进行 OCR 识别…";
+  var bubble = addBotMessage(msg);
+  bubble.insertBefore(createStepIndicator(1), bubble.firstChild);
+  setTimeout(function(){ performOCR(type); }, 800);
+}
+
+function triggerUpload() { document.getElementById("fileInput").click(); }
+
+function handleFileUpload(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  addUserMessage("上传了文件: " + file.name);
+  var type = "差旅交通费";
+  if (file.name.indexOf("住宿")>=0) type = "住宿费";
+  else if (file.name.indexOf("招待")>=0||file.name.indexOf("餐饮")>=0) type = "客户招待费";
+  else if (file.name.indexOf("采购")>=0||file.name.indexOf("办公")>=0) type = "办公采购";
+  startFlow(type);
+  event.target.value = "";
+}
+
+/* ============================================================
+   FLOW STEP 2: OCR + 结构化识别
+   ============================================================ */
+async function performOCR(type) {
+  var data = MOCK_OCR_DATA[type];
+  if (!data) { addBotMessage("未找到该费用类型的模拟数据。"); return; }
+  if (isApiConfigured("ocr")) {
+    try {
+      var result = await callConfiguredApi("ocr", {expenseType:type});
+      if (result.ok && result.data) data = Object.assign({}, data, result.data);
+    } catch(e) {}
+  }
+  currentOcrData = JSON.parse(JSON.stringify(data));
+  currentFlowStep = 2;
+  var html = "<b>OCR 识别完成</b>，请确认以下字段信息：";
+  var card = createOcrCard(data);
+  var bubble = addBotMessage(html, card);
+  bubble.insertBefore(createStepIndicator(2), bubble.firstChild);
+}
+
+function createOcrCard(data) {
+  var card = document.createElement("div");
+  card.className = "ocr-card";
+
+  // Layer 1 - 票据基础字段
+  card.appendChild(createFieldLayer("📄 票据基础字段", [
+    ["invoiceType","发票类型"],["invoiceNumber","发票号码"],["invoiceCode","发票代码"],
+    ["invoiceDate","开票日期"],["buyerName","购方名称"],["buyerTaxId","购方税号"],
+    ["sellerName","销方名称"],["amount","金额"],["taxAmount","税额"],
+    ["totalAmount","价税合计"],["checkCode","校验码"]
+  ], data));
+
+  // Layer 2 - 报销业务字段
+  card.appendChild(createFieldLayer("💼 报销业务字段", [
+    ["expenseType","费用类型"],["expenseDate","费用发生日期"],["city","城市"],
+    ["tripCode","出差/项目编号"],["costCenter","成本中心"],["purpose","用途"],
+    ["participants","参与人员"],["clientName","客户名称"]
+  ], data));
+
+  // Layer 3 - 系统匹配字段
+  card.appendChild(createFieldLayer("🔧 系统匹配字段", [
+    ["applicant","申请人"],["department","部门"],["level","职级"],
+    ["approver","审批人"],["budgetSubject","预算科目"],
+    ["hasPreApplication","是否已有事前申请"],["duplicateHit","是否命中历史重复票据"]
+  ], data));
+
+  // Buttons
+  var btnDiv = document.createElement("div");
+  btnDiv.style.cssText = "margin-top:12px;display:flex;gap:8px;";
+  var confirmBtn = document.createElement("button");
+  confirmBtn.className = "btn btn-primary";
+  confirmBtn.textContent = "确认字段";
+  confirmBtn.onclick = function(){ confirmFields(); };
+  btnDiv.appendChild(confirmBtn);
+  var reOcrBtn = document.createElement("button");
+  reOcrBtn.className = "btn";
+  reOcrBtn.textContent = "重新识别";
+  reOcrBtn.onclick = function(){ currentFlowStep=1; performOCR(currentExpenseType); };
+  btnDiv.appendChild(reOcrBtn);
+  card.appendChild(btnDiv);
+  return card;
+}
+
+function createFieldLayer(title, fields, data) {
+  var layer = document.createElement("div");
+  layer.className = "field-layer";
+  var titleDiv = document.createElement("div");
+  titleDiv.className = "field-layer-title";
+  titleDiv.textContent = title;
+  layer.appendChild(titleDiv);
+  fields.forEach(function(f) { layer.appendChild(createFieldRow(f[0], f[1], data)); });
+  return layer;
+}
+
+function createFieldRow(key, label, data) {
+  var row = document.createElement("div");
+  row.className = "field-row";
+  var val = data[key] != null ? data[key] : "—";
+  var conf = data.confidences ? (data.confidences[key] || 0) : 0.5;
+  var confClass = conf>=0.95?"conf-high":conf>=0.80?"conf-mid":"conf-low";
+  var statusText, statusClass;
+  if (conf>=0.95) { statusText="自动通过"; statusClass="status-pass"; }
+  else if (conf>=0.80) { statusText="提醒确认"; statusClass="status-remind"; }
+  else { statusText="须确认"; statusClass="status-confirm"; }
+  var valStr = String(val).replace(/"/g, "&quot;");
+  row.innerHTML =
+    '<span class="field-label">'+label+'</span>' +
+    '<span class="field-value"><input type="text" data-field="'+key+'" value="'+valStr+'" onchange="onFieldEdit(this,\''+key+'\')"></span>' +
+    '<span class="field-confidence '+confClass+'">'+(conf*100).toFixed(0)+'%</span>' +
+    '<span class="field-status '+statusClass+'" data-field-status="'+key+'">'+statusText+'</span>';
+  return row;
+}
+
+function onFieldEdit(input, key) {
+  if (currentOcrData) currentOcrData[key] = input.value;
+  var statusEl = input.closest(".field-row").querySelector('[data-field-status="'+key+'"]');
+  if (statusEl) { statusEl.textContent = "已人工修改"; statusEl.className = "field-status status-edited"; }
+  var confEl = input.closest(".field-row").querySelector(".field-confidence");
+  if (confEl) { confEl.textContent = "100%"; confEl.className = "field-confidence conf-high"; }
+  var precheckBtn = document.getElementById("btnRunPrecheck");
+  if (precheckBtn) precheckBtn.disabled = false;
+  showToast("字段已修改", "info");
+}
+
+/* ============================================================
+   FLOW STEP 3: 字段确认
+   ============================================================ */
+function confirmFields() {
+  currentFlowStep = 3;
+  document.querySelectorAll('.ocr-card input[data-field]').forEach(function(input){
+    if (currentOcrData) currentOcrData[input.dataset.field] = input.value;
+  });
+  addBotMessage("字段已确认！正在检查附件完整性…");
+  setTimeout(function(){ checkAttachments(); }, 600);
+}
+
+/* ============================================================
+   FLOW STEP 4: 附件完整性检查
+   ============================================================ */
+function checkAttachments() {
+  currentFlowStep = 4;
+  var checklist = ATTACHMENT_CHECKLISTS[currentExpenseType] || [];
+  var card = document.createElement("div");
+  card.className = "attachment-card";
+  card.innerHTML = "<h4>📎 附件完整性检查</h4>";
+  checklist.forEach(function(item){
+    var statusClass = (item.status==="已上传"||item.status==="已确认")?"status-pass":item.status==="缺失"?"status-confirm":"status-remind";
+    var div = document.createElement("div");
+    div.className = "attach-item";
+    div.innerHTML =
+      '<span class="attach-name">'+item.name+'</span>' +
+      '<span class="attach-status '+statusClass+'">'+item.status+'</span>' +
+      '<span class="attach-required">'+(item.required?'必填':'选填')+'</span>' +
+      '<span class="attach-reason">'+(item.reason||'—')+'</span>' +
+      '<span class="attach-action" onclick="handleAttachAction(\''+item.name+'\',\''+item.action+'\')">'+(item.action||'—')+'</span>';
+    card.appendChild(div);
+  });
+  var missing = checklist.filter(function(c){ return c.required && c.status==="缺失"; });
+  var summaryHtml = missing.length > 0 ?
+    '<div style="margin-top:10px;padding:8px 12px;background:#fef3c7;border-radius:6px;font-size:13px;color:#b45309;">⚠ 缺失 '+missing.length+' 项必填材料: '+missing.map(function(m){return m.name;}).join("、")+'</div>' :
+    '<div style="margin-top:10px;padding:8px 12px;background:#dcfce7;border-radius:6px;font-size:13px;color:#15803d;">✓ 必填材料齐全</div>';
+  card.innerHTML += summaryHtml;
+  var btnDiv = document.createElement("div");
+  btnDiv.style.cssText = "margin-top:12px;";
+  var precheckBtn = document.createElement("button");
+  precheckBtn.className = "btn btn-primary";
+  precheckBtn.id = "btnRunPrecheck";
+  precheckBtn.textContent = "运行预审";
+  precheckBtn.onclick = function(){ runPrecheck(); };
+  btnDiv.appendChild(precheckBtn);
+  card.appendChild(btnDiv);
+
+  var bubble = addBotMessage("", card);
+  bubble.insertBefore(createStepIndicator(4), bubble.firstChild);
+}
+
+function handleAttachAction(name, action) {
+  if (action==="点击上传") showToast("已触发上传: " + name, "info");
+  else if (action==="生成说明") showToast("将在预审后生成说明", "info");
+  else if (action==="点击填写") showToast("请填写: " + name, "info");
+}
+
+/* ============================================================
+   FLOW STEP 5: 规则引擎预审
+   ============================================================ */
+async function runPrecheck() {
+  currentFlowStep = 5;
+  addBotMessage("正在运行规则引擎预审…");
+
+  if (isApiConfigured("precheck")) {
+    try {
+      var result = await callConfiguredApi("precheck", {data:currentOcrData});
+      if (result.ok && result.data) { currentPrecheckResult = result.data; showPrecheckResult(currentPrecheckResult); return; }
+    } catch(e) {}
   }
 
-  loadReimbursements();
-})();
+  // Deterministic rule engine (NO LLM for rule checks)
+  var hitRules = [];
+  var allRuleResults = PRECHECK_RULES.map(function(rule){ return rule.check(currentOcrData); });
+  allRuleResults.forEach(function(r){ if(r && r.status !== "pass") hitRules.push(r); });
+
+  // Risk score calculation (deterministic, NO LLM)
+  var riskScore = 0;
+  hitRules.forEach(function(r){
+    if (r.status==="block") riskScore += 30;
+    else if (r.status==="warning") riskScore += 15;
+    else if (r.status==="info") riskScore += 5;
+  });
+  riskScore = Math.min(riskScore, 100);
+
+  // Conclusion (deterministic, NO LLM)
+  var precheckResult, riskLevel;
+  var hasBlock = hitRules.some(function(r){return r.status==="block";});
+  var hasWarning = hitRules.some(function(r){return r.status==="warning";});
+  if (hasBlock) { precheckResult = "拦截"; riskLevel = "high"; }
+  else if (hasWarning) { precheckResult = "预警"; riskLevel = "medium"; }
+  else { precheckResult = "通过"; riskLevel = "low"; }
+
+  currentPrecheckResult = {
+    result: precheckResult,
+    risk_level: riskLevel,
+    risk_score: riskScore,
+    hit_rules: hitRules,
+    all_rules: allRuleResults,
+    next_actions: getNextActions(precheckResult)
+  };
+  showPrecheckResult(currentPrecheckResult);
+}
+
+function getNextActions(result) {
+  if (result==="通过") return ["一键提交正式报销","暂存草稿"];
+  if (result==="预警") return ["补充说明","上传附件","生成超标说明","仍然提交并标记风险"];
+  if (result==="拦截") return ["修改费用类别","替换发票","发起特殊审批","暂存草稿"];
+  return ["补充字段","补充附件","重新识别","重新预审"];
+}
+
+function showPrecheckResult(result) {
+  var card = document.createElement("div");
+  card.className = "precheck-card";
+  var resultClass = result.result==="通过"?"result-pass":result.result==="预警"?"result-warn":result.result==="拦截"?"result-block":"result-info";
+  var riskColor = result.risk_level==="low"?"var(--green)":result.risk_level==="medium"?"var(--yellow)":"var(--red)";
+  var riskLabel = {low:"低",medium:"中",high:"高"};
+
+  var html = '<h4>🔍 预审结果</h4>';
+  html += '<div class="precheck-summary">';
+  html += '<div class="summary-item"><div class="summary-label">结论</div><div class="summary-value '+resultClass+'">'+result.result+'</div></div>';
+  html += '<div class="summary-item"><div class="summary-label">风险等级</div><div class="summary-value" style="color:'+riskColor+'">'+(riskLabel[result.risk_level]||result.risk_level)+'</div></div>';
+  html += '<div class="summary-item"><div class="summary-label">风险分</div><div class="summary-value" style="color:'+riskColor+'">'+result.risk_score+'</div></div>';
+  html += '</div>';
+
+  html += '<div style="overflow-x:auto;"><table class="rule-table"><thead><tr>';
+  html += '<th>规则ID</th><th>规则名</th><th>状态</th><th>实际值</th><th>标准值</th><th>差异</th><th>依据</th><th>建议动作</th>';
+  html += '</tr></thead><tbody>';
+  var allRules = result.all_rules || result.hit_rules || [];
+  allRules.forEach(function(r){
+    var stClass = r.status==="pass"?"status-pass":r.status==="warning"?"status-remind":r.status==="block"?"status-confirm":"status-edited";
+    var stText = r.status==="pass"?"通过":r.status==="warning"?"预警":r.status==="block"?"拦截":"信息";
+    html += '<tr><td>'+r.rule_id+'</td><td>'+r.rule_name+'</td>';
+    html += '<td><span class="rule-status '+stClass+'">'+stText+'</span></td>';
+    html += '<td>'+r.fact+'</td><td>'+r.standard+'</td><td>'+r.gap+'</td>';
+    html += '<td>'+r.basis+'</td><td>'+r.required_action+'</td></tr>';
+  });
+  html += '</tbody></table></div>';
+  card.innerHTML = html;
+
+  // AI explain button
+  var explainDiv = document.createElement("div");
+  explainDiv.style.cssText = "margin-top:12px;";
+  var explainBtn = document.createElement("button");
+  explainBtn.className = "btn";
+  explainBtn.textContent = "AI 解释预审结果";
+  explainBtn.onclick = function(){
+    explainBtn.disabled = true;
+    explainBtn.textContent = "生成中…";
+    llmExplainPrecheck(result).then(function(text){
+      var explainCard = document.createElement("div");
+      explainCard.className = "note-card";
+      explainCard.innerHTML = "<h4>💡 AI 预审解释</h4><div style='font-size:13px;line-height:1.7;white-space:pre-wrap;'>"+escapeHtml(text)+"</div><div class='note-mark'>AI 生成内容，请人工确认</div>";
+      addBotMessage("", explainCard);
+      explainBtn.textContent = "AI 解释预审结果";
+      explainBtn.disabled = false;
+    });
+  };
+  explainDiv.appendChild(explainBtn);
+  card.appendChild(explainDiv);
+
+  var bubble = addBotMessage("", card);
+  bubble.insertBefore(createStepIndicator(5), bubble.firstChild);
+  setTimeout(function(){ showClosureActions(result); }, 300);
+}
+
+function escapeHtml(str) { var d=document.createElement("div"); d.textContent=str; return d.innerHTML; }
+
+/* ============================================================
+   FLOW STEP 6: 用户纠错与闭环提交
+   ============================================================ */
+function showClosureActions(result) {
+  currentFlowStep = 6;
+  var card = document.createElement("div");
+  card.className = "closure-card";
+  card.innerHTML = "<h4>🎯 下一步操作</h4>";
+  var actionsDiv = document.createElement("div");
+  actionsDiv.className = "closure-actions";
+  var actions = result.next_actions || [];
+  actions.forEach(function(action){
+    var btn = document.createElement("button");
+    btn.textContent = action;
+    if (action==="一键提交正式报销") { btn.className="primary"; btn.onclick=function(){submitFormalReimb();}; }
+    else if (action==="暂存草稿") { btn.onclick=function(){saveDraft();}; }
+    else if (action==="补充说明"||action==="生成超标说明") { btn.className="primary"; btn.onclick=function(){generateNote();}; }
+    else if (action==="上传附件") { btn.onclick=function(){triggerUpload();}; }
+    else if (action==="仍然提交并标记风险") { btn.className="primary"; btn.onclick=function(){submitWithRisk();}; }
+    else if (action==="修改费用类别") { btn.onclick=function(){modifyExpenseType();}; }
+    else if (action==="替换发票") { btn.onclick=function(){triggerUpload();showToast("请上传新发票替换","info");}; }
+    else if (action==="发起特殊审批") { btn.className="primary"; btn.onclick=function(){initiateSpecialApproval();}; }
+    else if (action==="补充字段") { btn.onclick=function(){reEditFields();}; }
+    else if (action==="补充附件") { btn.onclick=function(){triggerUpload();}; }
+    else if (action==="重新识别") { btn.onclick=function(){currentFlowStep=1;performOCR(currentExpenseType);}; }
+    else if (action==="重新预审") { btn.onclick=function(){runPrecheck();}; }
+    else { btn.onclick=function(){showToast(action+" 功能已触发","info");}; }
+    actionsDiv.appendChild(btn);
+  });
+  card.appendChild(actionsDiv);
+  var bubble = addBotMessage("", card);
+  bubble.insertBefore(createStepIndicator(6), bubble.firstChild);
+}
+
+function submitFormalReimb() {
+  showToast("已提交正式报销申请！", "success");
+  addBotMessage("✅ 您的报销申请已正式提交，单号：<b>BX-2026-00" + (allReimbursements.length+1) + "</b>，可在【我的报销】页面查看进度。");
+  resetFlow();
+}
+function saveDraft() { showToast("已暂存为草稿","info"); addBotMessage("📝 报销单已暂存为草稿，您可随时从【待处理单】继续编辑。"); resetFlow(); }
+function submitWithRisk() { showToast("已提交并标记风险","warning"); addBotMessage("⚠️ 报销已提交，已标记为风险单据，审批人将额外关注。"); resetFlow(); }
+function modifyExpenseType() {
+  var html = "请选择正确的费用类型：";
+  var div = document.createElement("div");
+  div.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;";
+  ["差旅交通费","住宿费","客户招待费","办公采购"].forEach(function(t){
+    var btn = document.createElement("button");
+    btn.className = "quick-btn";
+    btn.textContent = t;
+    btn.onclick = function(){
+      currentExpenseType = t;
+      if (currentOcrData) currentOcrData.expenseType = t;
+      showToast("费用类型已修改为: "+t, "success");
+      addBotMessage("费用类型已修改为 <b>"+t+"</b>，建议重新预审。");
+    };
+    div.appendChild(btn);
+  });
+  addBotMessage(html, div);
+}
+function initiateSpecialApproval() { showToast("特殊审批已发起","info"); addBotMessage("📋 特殊审批流程已发起，审批人：<b>"+(currentOcrData?currentOcrData.approver:"—")+"</b>，请等待审批结果。"); }
+function reEditFields() { currentFlowStep=2; performOCR(currentExpenseType); showToast("请重新确认字段","info"); }
+
+function generateNote() {
+  addBotMessage("正在生成报销说明…");
+  llmGenerateReimbursementNote(currentPrecheckResult).then(function(text){
+    var card = document.createElement("div");
+    card.className = "note-card";
+    card.innerHTML = "<h4>📝 报销说明（草稿）</h4>";
+    var textarea = document.createElement("textarea");
+    textarea.className = "note-textarea";
+    textarea.value = text;
+    card.appendChild(textarea);
+    var noteMark = document.createElement("div");
+    noteMark.className = "note-mark";
+    noteMark.textContent = "AI 生成草稿，请人工确认";
+    card.appendChild(noteMark);
+    var btnDiv = document.createElement("div");
+    btnDiv.style.cssText = "margin-top:8px;display:flex;gap:8px;";
+    var saveBtn = document.createElement("button");
+    saveBtn.className = "btn btn-primary";
+    saveBtn.textContent = "确认并保存说明";
+    saveBtn.onclick = function(){ showToast("说明已保存","success"); addBotMessage("✅ 报销说明已保存，可以继续提交。"); };
+    btnDiv.appendChild(saveBtn);
+    card.appendChild(btnDiv);
+    addBotMessage("", card);
+  });
+}
+
+function resetFlow() { currentFlowStep=0; currentOcrData=null; currentPrecheckResult=null; currentExpenseType=""; }
+
+/* ============================================================
+   SEND MESSAGE (chat)
+   ============================================================ */
+async function sendMessage() {
+  var input = document.getElementById("chatInput");
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  addUserMessage(text);
+
+  if (currentFlowStep === 0) {
+    if (text==="取消"||text==="重置") { resetFlow(); addBotMessage("流程已重置，您可以重新开始。"); return; }
+    // Detect expense type for flow start
+    var type = null;
+    if (text.indexOf("上传")>=0||text.indexOf("发票")>=0||text.indexOf("预审")>=0) type = "差旅交通费";
+    if (text.indexOf("住宿")>=0) type = "住宿费";
+    if (text.indexOf("招待")>=0||text.indexOf("客户")>=0) type = "客户招待费";
+    if (text.indexOf("采购")>=0||text.indexOf("办公")>=0) type = "办公采购";
+    if (text.indexOf("差旅")>=0) type = "差旅交通费";
+    if (type) { startFlow(type); return; }
+    // QA mode
+    var qaResult = await processQuestion(text);
+    var html = qaResult.answer;
+    html += '<div class="qa-path">问答路径: '+qaResult.path+' | 是否调用LLM: '+(qaResult.usedLLM?"是":"否")+' | 引用来源: '+qaResult.source+'</div>';
+    addBotMessage(html);
+  } else {
+    if (text==="取消"||text==="重置") { resetFlow(); addBotMessage("流程已重置，您可以重新开始。"); return; }
+    addBotMessage("当前正在处理报销流程中，请先完成当前步骤或点击相应按钮。如需中断，请输入【取消】。");
+  }
+}
+
+/* ============================================================
+   TODO PAGE
+   ============================================================ */
+function renderTodoList() {
+  var grid = document.getElementById("todoGrid");
+  grid.innerHTML = "";
+  TODO_LIST.forEach(function(item){
+    var card = document.createElement("div");
+    card.className = "todo-card";
+    card.onclick = function(){ openTodoDetail(item); };
+    var statusColor = item.status==="拦截"?"var(--red)":item.status==="预警"?"var(--yellow)":item.status==="信息不足"?"var(--blue)":"var(--text-secondary)";
+    var statusBg = item.status==="拦截"?"#fef2f2":item.status==="预警"?"#fef3c7":item.status==="信息不足"?"#dbeafe":"#f1f5f9";
+    card.innerHTML =
+      '<div class="todo-card-header"><span class="todo-card-title">'+item.id+'</span><span class="status-tag" style="background:'+statusBg+';color:'+statusColor+';">'+item.status+'</span></div>' +
+      '<div class="todo-card-body"><div>费用类型: '+item.type+'</div><div>金额: '+item.amount+' 元</div><div>申请人: '+item.applicant+' / '+item.department+'</div><div>原因: '+item.reason+'</div></div>' +
+      '<div class="todo-card-footer"><span>'+item.date+'</span><span style="color:var(--primary);">查看详情 ›</span></div>';
+    grid.appendChild(card);
+  });
+  document.getElementById("todoBadge").textContent = TODO_LIST.length;
+}
+
+function openTodoDetail(item) {
+  document.getElementById("todoDetailTitle").textContent = item.id + " - " + item.type;
+  var body = document.getElementById("todoDetailBody");
+  body.innerHTML =
+    '<div class="detail-section"><h5>📋 单据基本信息</h5>' +
+    '<div class="detail-row"><span class="dl">单号</span><span class="dv">'+item.id+'</span></div>' +
+    '<div class="detail-row"><span class="dl">费用类型</span><span class="dv">'+item.type+'</span></div>' +
+    '<div class="detail-row"><span class="dl">金额</span><span class="dv">'+item.amount+' 元</span></div>' +
+    '<div class="detail-row"><span class="dl">申请人</span><span class="dv">'+item.applicant+'</span></div>' +
+    '<div class="detail-row"><span class="dl">部门</span><span class="dv">'+item.department+'</span></div>' +
+    '<div class="detail-row"><span class="dl">日期</span><span class="dv">'+item.date+'</span></div></div>' +
+    '<div class="detail-section"><h5>⚠️ 当前状态</h5>' +
+    '<div class="detail-row"><span class="dl">状态</span><span class="dv" style="color:'+(item.status==="拦截"?"var(--red)":item.status==="预警"?"var(--yellow)":"var(--blue)")+';">'+item.status+'</span></div>' +
+    '<div class="detail-row"><span class="dl">原因</span><span class="dv">'+item.reason+'</span></div></div>' +
+    '<div class="detail-section"><h5>📎 缺失材料</h5>' +
+    (item.missing||[]).map(function(m){ return '<div class="detail-row"><span class="dl">缺失</span><span class="dv" style="color:var(--red);">'+m+'</span></div>'; }).join("") + '</div>' +
+    '<div class="detail-section"><h5>📌 命中规则</h5>' +
+    (item.hitRules||[]).map(function(r){ return '<div class="detail-row"><span class="dl">规则</span><span class="dv">'+r+'</span></div>'; }).join("") + '</div>' +
+    '<div class="detail-section"><h5>💡 下一步建议</h5><div class="detail-row"><span class="dv">'+item.suggestion+'</span></div></div>';
+
+  var footer = document.getElementById("todoDetailFooter");
+  footer.innerHTML = "";
+  ["补充附件","生成说明","修改字段","重新预审","暂存草稿"].forEach(function(a){
+    var btn = document.createElement("button");
+    btn.className = "btn" + (a==="重新预审"?" btn-primary":"");
+    btn.textContent = a;
+    btn.onclick = function(){
+      closeTodoDetail();
+      switchPage("chat");
+      currentExpenseType = item.type;
+      currentOcrData = JSON.parse(JSON.stringify(MOCK_OCR_DATA[item.type]||MOCK_OCR_DATA["差旅交通费"]));
+      if (currentOcrData) { currentOcrData.expenseType=item.type; currentOcrData.applicant=item.applicant; currentOcrData.department=item.department; }
+      addUserMessage("从待处理单进入: " + item.id + " - " + item.type);
+      addBotMessage("已加载单据 <b>"+item.id+"</b> 的信息，正在准备预审流程…");
+      currentFlowStep = 1;
+      setTimeout(function(){ performOCR(item.type); }, 500);
+    };
+    footer.appendChild(btn);
+  });
+  document.getElementById("todoDetailModal").classList.add("show");
+}
+function closeTodoDetail() { document.getElementById("todoDetailModal").classList.remove("show"); }
+
+/* ============================================================
+   REIMBURSEMENTS TABLE
+   ============================================================ */
+function filterReimbTable() {
+  var typeFilter = document.getElementById("filterType").value;
+  var statusFilter = document.getElementById("filterStatus").value;
+  var dateStart = document.getElementById("filterDateStart").value;
+  var dateEnd = document.getElementById("filterDateEnd").value;
+  filteredReimbData = allReimbursements.filter(function(r){
+    if (typeFilter && r.type !== typeFilter) return false;
+    if (statusFilter && r.status !== statusFilter) return false;
+    if (dateStart && r.date < dateStart) return false;
+    if (dateEnd && r.date > dateEnd) return false;
+    return true;
+  });
+  sortReimbData();
+  renderReimbTable();
+}
+
+function sortReimbTable(key) {
+  if (reimbSortKey === key) reimbSortAsc = !reimbSortAsc;
+  else { reimbSortKey = key; reimbSortAsc = true; }
+  sortReimbData();
+  renderReimbTable();
+}
+
+function sortReimbData() {
+  filteredReimbData.sort(function(a,b){
+    var va=a[reimbSortKey], vb=b[reimbSortKey];
+    if (typeof va === "number") return reimbSortAsc ? va-vb : vb-va;
+    return reimbSortAsc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+  });
+}
+
+function renderReimbTable() {
+  var body = document.getElementById("reimbBody");
+  body.innerHTML = "";
+  filteredReimbData.forEach(function(r){
+    var statusColor = r.status==="通过"?"var(--green)":r.status==="预警"?"var(--yellow)":r.status==="拦截"?"var(--red)":r.status==="信息不足"?"var(--blue)":"var(--text-secondary)";
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td>'+r.id+'</td><td>'+r.type+'</td><td>¥'+r.amount+'</td><td>'+r.date+'</td>' +
+      '<td style="color:'+statusColor+';font-weight:600;">'+r.status+'</td>' +
+      '<td>'+r.riskScore+'</td>' +
+      '<td><button class="btn" style="padding:4px 10px;font-size:12px;" onclick="viewReimbDetail(\''+r.id+'\')">详情</button></td>';
+    body.appendChild(tr);
+  });
+}
+
+function viewReimbDetail(id) {
+  var r = allReimbursements.find(function(x){return x.id===id;});
+  if (!r) return;
+  switchPage("chat");
+  addBotMessage("<b>"+r.id+"</b><br>类型: "+r.type+"<br>金额: ¥"+r.amount+"<br>日期: "+r.date+"<br>状态: "+r.status+"<br>申请人: "+r.applicant+"<br>部门: "+r.department);
+  showToast("已跳转至智能对话查看详情", "info");
+}
+
+function exportFilteredCSV() {
+  if (filteredReimbData.length===0) { showToast("没有可导出的数据","warning"); return; }
+  var header = "单号,费用类型,金额,申请日期,状态,风险分,申请人,部门\n";
+  var rows = filteredReimbData.map(function(r){
+    return [r.id,r.type,r.amount,r.date,r.status,r.riskScore,r.applicant,r.department].join(",");
+  }).join("\n");
+  var csv = "\uFEFF" + header + rows;
+  var blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = "报销记录_" + new Date().toISOString().slice(0,10) + ".csv";
+  a.click(); URL.revokeObjectURL(url);
+  showToast("已导出 " + filteredReimbData.length + " 条记录", "success");
+}
+
+/* ============================================================
+   ARCHITECTURE DIAGRAM
+   ============================================================ */
+function renderArchitecture() {
+  var container = document.getElementById("archDiagram");
+  container.innerHTML = "";
+
+  var title = document.createElement("div");
+  title.className = "arch-title";
+  title.textContent = "费用报销智能助手 · 产品架构";
+  container.appendChild(title);
+
+  var rows = document.createElement("div");
+  rows.className = "arch-rows";
+
+  // Row 1: 前台
+  rows.appendChild(createArchRow("前台", "", [
+    ["用户入口","👤"],["上传发票/附件","📄"],["智能问答","💬"],
+    ["OCR字段确认","✅"],["预审结果","🔍"],["补正提交","📝"]
+  ]));
+
+  rows.appendChild(createArchArrow(6));
+
+  // Row 2: AI服务
+  rows.appendChild(createArchRow("AI服务", "ai", [
+    ["关键词缓存","🔑"],["FAQ向量匹配","🎯"],["意图识别","🧠"],["Query改写","✏️"],
+    ["Query路由","🔀"],["混合检索","🔎"],["Reranker","📊"],["LLM生成","🤖"],
+    ["预审解释生成","💡"],["报销说明生成","📋"]
+  ]));
+
+  rows.appendChild(createArchArrow(10));
+
+  // Row 3: 后台
+  rows.appendChild(createArchRow("后台", "backend", [
+    ["制度知识库","📚"],["FAQ知识库","❓"],["发票/OCR数据","🧾"],["报销单据数据","📋"],
+    ["员工/部门/职级","👥"],["预算/项目数据","💰"],["附件数据","📎"],["规则配置表","⚙️"],["操作日志","📜"]
+  ]));
+
+  rows.appendChild(createArchArrow(9));
+
+  // Row 4: 基础能力
+  rows.appendChild(createArchRow("基础能力", "infra", [
+    ["组织架构","🏢"],["用户/账号","🔐"],["权限管理","🛡️"],["操作日志","📜"],
+    ["知识标签/元数据","🏷️"],["知识分块","🧩"],["原文件","📁"],["知识校对","✔️"],
+    ["知识更新","🔄"],["API配置","⚙️"]
+  ]));
+
+  container.appendChild(rows);
+}
+
+function createArchRow(label, rowClass, cards) {
+  var row = document.createElement("div");
+  row.className = "arch-row" + (rowClass ? " " + rowClass : "");
+  var labelDiv = document.createElement("div");
+  labelDiv.className = "arch-row-label";
+  labelDiv.textContent = label;
+  row.appendChild(labelDiv);
+  var cardsDiv = document.createElement("div");
+  cardsDiv.className = "arch-row-cards";
+  cards.forEach(function(c){
+    cardsDiv.innerHTML += '<div class="arch-card"><div class="card-icon">'+c[1]+'</div><div class="card-label">'+c[0]+'</div></div>';
+  });
+  row.appendChild(cardsDiv);
+  return row;
+}
+
+function createArchArrow(count) {
+  var arrowDiv = document.createElement("div");
+  arrowDiv.className = "arch-arrows";
+  for (var i = 0; i < count; i++) {
+    arrowDiv.innerHTML += '<div class="arch-arrow-line"></div>';
+  }
+  return arrowDiv;
+}
+
+/* ============================================================
+   HELP PAGE
+   ============================================================ */
+function renderFAQ() {
+  var list = document.getElementById("faqList");
+  if (list.children.length > 0) return;
+  faqKnowledgeBase.forEach(function(faq){
+    var item = document.createElement("div");
+    item.className = "faq-item";
+    item.innerHTML = '<div class="faq-q" onclick="toggleFaq(this)"><span>'+faq.q+'</span><span class="arrow">▼</span></div><div class="faq-a">'+faq.a+'</div>';
+    list.appendChild(item);
+  });
+}
+function toggleFaq(el) { el.classList.toggle("open"); el.nextElementSibling.classList.toggle("open"); }
+
+function renderPolicies() {
+  var list = document.getElementById("policyList");
+  if (list.children.length > 0) return;
+  MOCK_POLICIES.forEach(function(p){
+    var item = document.createElement("div");
+    item.className = "policy-item";
+    item.innerHTML = '<div class="policy-header" onclick="togglePolicy(this)"><span>'+p.title+'<span class="policy-tag">'+p.tag+'</span></span><span class="arrow" style="transition:transform .2s;font-size:12px;">▼</span></div><div class="policy-body">'+p.content+'</div>';
+    list.appendChild(item);
+  });
+}
+function togglePolicy(el) {
+  el.classList.toggle("open");
+  var arrow = el.querySelector(".arrow");
+  if (arrow) arrow.style.transform = el.classList.contains("open") ? "rotate(180deg)" : "";
+  el.nextElementSibling.classList.toggle("open");
+}
+
+function submitFeedback() {
+  var type = document.getElementById("feedbackType").value;
+  var title = document.getElementById("feedbackTitle").value.trim();
+  var detail = document.getElementById("feedbackDetail").value.trim();
+  if (!type) { showToast("请选择反馈类型","warning"); return; }
+  if (!title) { showToast("请填写标题","warning"); return; }
+  if (!detail) { showToast("请填写详细描述","warning"); return; }
+  showToast("感谢您的反馈！我们会尽快处理。","success");
+  document.getElementById("feedbackType").value = "";
+  document.getElementById("feedbackTitle").value = "";
+  document.getElementById("feedbackDetail").value = "";
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init() {
+  updateConfigBtnState();
+  filteredReimbData = allReimbursements.slice();
+
+  // Welcome message
+  var welcomeHtml = "您好！我是费用报销智能助手，可以帮您：<br><br>" +
+    "🔹 <b>智能问答</b>：回答报销制度、流程等问题<br>" +
+    "🔹 <b>OCR 识别</b>：上传发票自动识别结构化字段<br>" +
+    "🔹 <b>规则预审</b>：自动校验合规性，给出预审结论<br>" +
+    "🔹 <b>闭环提交</b>：根据预审结果提供纠错和提交操作<br><br>" +
+    "您可以：";
+  var quickDiv = document.createElement("div");
+  quickDiv.className = "quick-actions";
+  ["上传发票开始预审","差旅报销标准","住宿费超标怎么办","招待费需要哪些材料"].forEach(function(q){
+    var btn = document.createElement("button");
+    btn.className = "quick-btn";
+    btn.textContent = q;
+    btn.onclick = function(){ document.getElementById("chatInput").value = q; sendMessage(); };
+    quickDiv.appendChild(btn);
+  });
+  addBotMessage(welcomeHtml, quickDiv);
+
+  filterReimbTable();
+  document.getElementById("todoBadge").textContent = TODO_LIST.length;
+}
+
+init();
 </script>
 </body>
 </html>
